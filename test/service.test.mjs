@@ -136,3 +136,18 @@ test('cancellation is scoped, durable and repeatable', async t => {
     assert.equal((await service.cancel(principal, job.jobId)).state, 'cancelled');
     assert.equal(printer.cancelled.length, 1);
 });
+test('aborted print requests do not reserve or dispatch before CUPS submission', async t => {
+    const { service, printer, store } = fixture(t);
+    const artifact = await prepare(service), key = randomUUID(), controller = new AbortController();
+    const realStatus = printer.status;
+    printer.status = async () => { controller.abort(); return realStatus(); };
+    await assert.rejects(service.print(principal, artifact.artifactId, 1, key, controller.signal), /cancelled before dispatch/);
+    assert.equal(printer.submissions.length, 0);
+    assert.equal(store.existing(principal.owner, key, artifact.artifactId, 1), undefined);
+});
+test('UUID normalization keeps case changes from creating a second print intent', () => {
+    const artifactId = randomUUID(), idempotencyKey = randomUUID();
+    const lower = printSchema.parse({ artifactId, idempotencyKey, confirmed: true });
+    const upper = printSchema.parse({ artifactId: artifactId.toUpperCase(), idempotencyKey: idempotencyKey.toUpperCase(), confirmed: true });
+    assert.deepEqual(lower, upper);
+});

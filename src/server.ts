@@ -47,11 +47,11 @@ export function createServer(service: PrinterService, principal: Principal): Mcp
     server.registerTool('print_labels', {
         ...toolText(locale, 'print_labels'), inputSchema: printSchema, outputSchema: jobOutput.extend({ replayed: z.boolean() }),
         annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false }, scopeChallenge: requireScopes('xprinter.print'),
-    }, ({ artifactId, copies, idempotencyKey }) => safe(async () => textResult({ ...await service.print(principal, artifactId, copies, idempotencyKey) })));
+    }, ({ artifactId, copies, idempotencyKey }, ctx) => safe(async () => textResult({ ...await service.print(principal, artifactId, copies, idempotencyKey, ctx.mcpReq.signal) })));
     server.registerTool('job_status', { ...toolText(locale, 'job_status'), inputSchema: jobSchema, outputSchema: jobOutput.extend({ spoolerState: z.string(), physicalOutputVerified: z.boolean(), advice: z.string() }), annotations: read, scopeChallenge: requireScopes('xprinter.read') }, ({ jobId }) => safe(async () => textResult(await service.jobStatus(principal, jobId))));
     server.registerTool('cancel_job', {
         ...toolText(locale, 'cancel_job'), inputSchema: jobSchema, outputSchema: jobOutput, annotations: { ...read, readOnlyHint: false, destructiveHint: true }, scopeChallenge: requireScopes('xprinter.cancel'),
-    }, ({ jobId }) => safe(async () => textResult({ ...await service.cancel(principal, jobId) })));
+    }, ({ jobId }, ctx) => safe(async () => textResult({ ...await service.cancel(principal, jobId, ctx.mcpReq.signal) })));
     server.registerResource('capabilities', 'xprinter://capabilities', { title: 'Open Xprinter capabilities', mimeType: 'application/json', scopeChallenge: requireScopes('xprinter.read') }, uri => {
         requireScope(principal, 'xprinter.read');
         return { contents: [{ uri: uri.href, mimeType: 'application/json', text: JSON.stringify(service.capabilities()) }] };
@@ -59,7 +59,7 @@ export function createServer(service: PrinterService, principal: Principal): Mcp
     server.registerResource('prepared_pdf', new ResourceTemplate('xprinter://labels/{artifactId}', { list: undefined }), {
         title: 'Your prepared label PDF', mimeType: 'application/pdf', scopeChallenge: requireScopes('xprinter.prepare'),
     }, (uri, variables) => {
-        const artifactId = z.uuid().parse(variables.artifactId);
+        const artifactId = z.uuid().parse(variables.artifactId).toLowerCase();
         const artifact = service.preview(principal, artifactId);
         return { contents: [{ uri: uri.href, mimeType: 'application/pdf', blob: artifact.pdf.toString('base64') }] };
     });

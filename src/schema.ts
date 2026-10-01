@@ -34,13 +34,14 @@ export const preparePdfSchema = z.object({
     rotate: z.boolean().default(false),
 }).strict();
 export type PreparePdf = z.infer<typeof preparePdfSchema>;
-export const artifactSchema = z.object({ artifactId: z.uuid() }).strict();
+const uuid = z.uuid().transform(value => value.toLowerCase());
+export const artifactSchema = z.object({ artifactId: uuid }).strict();
 export const printSchema = artifactSchema.extend({
     copies: z.number().int().min(1).max(100).default(1),
-    idempotencyKey: z.uuid().describe('Generate once per intended print; reuse exactly this key on network retries.'),
+    idempotencyKey: uuid.describe('Generate once per intended print; reuse exactly this key on network retries.'),
     confirmed: z.literal(true).describe('The user explicitly requested this physical print and reviewed the preview, dimensions and quantity.'),
 }).strict();
-export const jobSchema = z.object({ jobId: z.uuid() }).strict();
+export const jobSchema = z.object({ jobId: uuid }).strict();
 export const renderResponseSchema = z.object({
     pdfBase64: z.string().max(8_388_608), previewBase64: z.string().max(4_194_304),
     pages: z.number().int().min(1).max(100), widthMm: z.number(), heightMm: z.number(),

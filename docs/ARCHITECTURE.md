@@ -33,6 +33,8 @@ SQLite and CUPS do not share a transaction. There is a small crash window in whi
 
 HTTP creates a fresh SDK server per request while keeping the same service/store. Each factory receives only validated authentication context. Stdio binds to the local OS account; clients running as that account share its local identity. SSH uses the remote account's same local trust boundary. No long-lived HTTP session is used as authorization.
 
+MCP cancellation is checked before dispatching printer mutations. Once CUPS submission starts, the server finishes collecting/persisting its receipt even if the client cancels or disconnects; cancellation of a protocol request cannot undo paper. Use `cancel_job` for an identified unfinished CUPS job. UUID inputs are normalized so a case change cannot accidentally create a distinct retry key.
+
 ## Native rendering
 
 The app's `--mcp-render` entry point reads bounded JSON to EOF, shares `LabelRenderer` with the GUI and returns PDF plus first-page PNG. The server verifies app version before invoking it, so an older executable cannot accidentally launch the GUI for an unknown option. The Mac driver controls physical dimensions, gap/mark origin and printer-dot output. The Node component never loads proprietary SDKs or constructs raw TSPL.

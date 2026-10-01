@@ -17,9 +17,9 @@ export interface PrinterStatus {
 export interface Renderer { render(request: Record<string, unknown>): Promise<Rendered> }
 export interface PrinterBackend {
     status(): Promise<PrinterStatus>;
-    submit(pdf: Buffer, profile: Profile, copies: number, jobId: string): Promise<number>;
+    submit(pdf: Buffer, profile: Profile, copies: number, jobId: string, signal?: AbortSignal): Promise<number>;
     jobState(job: Job): Promise<string>;
-    cancel(job: Job): Promise<void>;
+    cancel(job: Job, signal?: AbortSignal): Promise<void>;
 }
 
 export function command(executable: string, args: readonly string[], input?: Buffer, limit = 1024 * 1024, timeout = 10_000, allowFailureOutput = false): Promise<Buffer> {
@@ -118,11 +118,12 @@ export class CupsPrinter implements PrinterBackend {
                 pendingJobs: pending.toString().split('\n').filter(v => v.startsWith(`${QUEUE}-`)).length, hardwareVerified: false };
         } catch { return unavailable; }
     }
-    async submit(pdf: Buffer, profile: Profile, copies: number, jobId: string): Promise<number> {
+    async submit(pdf: Buffer, profile: Profile, copies: number, jobId: string, signal?: AbortSignal): Promise<number> {
         assertMac();
         return temporary(async folder => {
             const file = join(folder, 'labels.pdf');
             await writeFile(file, pdf, { mode: 0o600, flag: 'wx' });
+            if (signal?.aborted) throw new PublicError('request_cancelled', 'The request was cancelled before CUPS dispatch.');
             const text = (await command('/usr/bin/lp', printArguments(profile, copies, jobId, file))).toString();
             const match = /^request id is XP330B_OpenSource-(\d+)\b/.exec(text);
             if (!match || !Number.isSafeInteger(Number(match[1]))) throw new PublicError('submission_uncertain', 'CUPS did not return a verifiable job receipt. Inspect the Mac queue before trying another key.');
@@ -154,9 +155,10 @@ export class CupsPrinter implements PrinterBackend {
         try { return ({ 3: 'pending', 4: 'held', 5: 'processing', 6: 'stopped', 7: 'cancelled', 8: 'aborted', 9: 'completed' } as Record<number, string>)[(await this.verifiedJob(job)).state]!; }
         catch { return 'unavailable-or-unverifiable'; }
     }
-    async cancel(job: Job): Promise<void> {
+    async cancel(job: Job, signal?: AbortSignal): Promise<void> {
         const { state } = await this.verifiedJob(job);
         if (state >= 7) throw new PublicError('job_finished', 'This job already finished. Printed labels cannot be undone.');
+        if (signal?.aborted) throw new PublicError('request_cancelled', 'The cancellation request was aborted before dispatch.');
         await command('/usr/bin/cancel', [`${QUEUE}-${job.cupsJobId}`]);
     }
 }

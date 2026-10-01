@@ -35,18 +35,20 @@ export class PrinterService {
         return this.render(p.owner, input.profile, { widthMm: input.profile.widthMm, heightMm: input.profile.heightMm, pdfBase64: input.pdfBase64, rotate: input.rotate });
     }
     preview(p: Principal, id: string): Artifact { requireScope(p, 'xprinter.prepare'); return this.store.artifact(p.owner, id); }
-    async print(p: Principal, artifact: string, copies: number, key: string): Promise<Job & { replayed: boolean }> {
+    async print(p: Principal, artifact: string, copies: number, key: string, signal?: AbortSignal): Promise<Job & { replayed: boolean }> {
         requireScope(p, 'xprinter.print');
         if (!this.config.allowPrint) throw new PublicError('print_disabled', 'The operator must set XPRINTER_ALLOW_PRINT=1 to permit physical printing.');
+        if (signal?.aborted) throw new PublicError('request_cancelled', 'The print request was cancelled before dispatch.');
         const prior = this.store.existing(p.owner, key, artifact, copies);
         if (prior) return { ...prior, replayed: true };
         const prepared = this.store.artifact(p.owner, artifact);
         const state = await this.printer.status();
+        if (signal?.aborted) throw new PublicError('request_cancelled', 'The print request was cancelled before dispatch.');
         if (!state.configured || !state.enabled || !state.acceptingJobs) throw new PublicError('printer_unavailable', 'The Open Xprinter USB queue must be configured, enabled and accepting jobs.');
         const reservation = this.store.reserve(p.owner, key, artifact, copies, this.config.maxLabelsPerJob, this.config.maxLabelsPerHour);
         if (!reservation.dispatch) return { ...reservation.job, replayed: true };
         try {
-            const cupsId = await this.printer.submit(prepared.pdf, prepared.profile, copies, reservation.job.jobId);
+            const cupsId = await this.printer.submit(prepared.pdf, prepared.profile, copies, reservation.job.jobId, signal);
             return { ...this.store.submitted(p.owner, reservation.job.jobId, cupsId), replayed: false };
         } catch {
             // A timeout, disconnect or crash may occur after CUPS accepted the job.
@@ -60,12 +62,13 @@ export class PrinterService {
         return { ...job, spoolerState: job.cupsJobId === null ? 'unknown' : await this.printer.jobState(job),
             physicalOutputVerified: false, advice: job.state === 'uncertain' ? 'Inspect the Mac queue and physical labels before using a NEW idempotency key.' : 'CUPS completion does not confirm physical label alignment or barcode readability.' };
     }
-    async cancel(p: Principal, id: string): Promise<Job> {
+    async cancel(p: Principal, id: string, signal?: AbortSignal): Promise<Job> {
         requireScope(p, 'xprinter.cancel');
         if (!this.config.allowPrint) throw new PublicError('print_disabled', 'The operator has disabled printer mutations.');
         const job = this.store.job(p.owner, id);
         if (job.state === 'cancelled') return job;
-        await this.printer.cancel(job);
+        if (signal?.aborted) throw new PublicError('request_cancelled', 'The cancellation request was aborted before dispatch.');
+        await this.printer.cancel(job, signal);
         return this.store.cancelled(p.owner, id);
     }
 }
