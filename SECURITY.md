@@ -22,10 +22,18 @@ The dedicated SSH key grants command execution as its Mac account, independently
 
 The local OS account can inspect/control its files, printer queue and MCP process. All local/SSH clients under that account share one identity. A database or token/identity-provider compromise, a deliberate new print key, receipt expiry (30 days) or database loss can permit repeat printing. Separate processes using different state paths have separate budgets. Direct prints from other Mac apps bypass MCP policies.
 
-Native PDF parsing has size/time/pixel limits but no operating-system sandbox in this release. Do not expose the service to arbitrary untrusted people; keep macOS, Node and dependencies updated. Prepared data becomes inaccessible after 15 minutes and is periodically removed; SQLite checkpoints reduce WAL retention but backups, filesystem snapshots and SSD behavior are outside erasure guarantees. CUPS separately controls its spool retention.
+Open Xprinter 0.3.1+ has its own 25-second renderer deadline in addition to the MCP caller timeout. Native PDF parsing has size/time/pixel limits but no operating-system sandbox in this release. Do not expose the service to arbitrary untrusted people; keep macOS, Node and dependencies updated. Prepared data becomes inaccessible after 15 minutes and is periodically removed; SQLite checkpoints reduce WAL retention but backups, filesystem snapshots and SSD behavior are outside erasure guarantees. CUPS separately controls its spool retention.
 
 TLS termination, OAuth issuance, client registration, network exposure, Mac account permissions and service lifecycle are operator responsibilities. No public endpoint or authentication provider is set up automatically. Windows/Linux direct USB hosting is not implemented. Current HTTP authentication accepts JWT access tokens, not opaque token introspection or a custom authorization server.
 
 ## Report a vulnerability
 
 Use this repository's GitHub **Security → Report a vulnerability** if available. Do not publish tokens, credentials, private labels or actionable exploit data in a public issue. If private reporting is unavailable, open a minimal issue asking the maintainer for a private channel without including exploit or personal data. Fixes need a regression test covering the affected boundary.
+
+## Dependency and release maintenance
+
+The runtime image has no global npm/npx/Yarn/Corepack; builder package managers are not available in its running filesystem. Application packages use exact versions and shrinkwrap integrity hashes; installs disable lifecycle scripts. CI audits runtime and development npm dependencies, runs PR dependency review and CodeQL, and scans both image architectures with Trivy. High/critical vulnerability or CodeQL findings and any image secret findings block publication. Scan failures also block the release. Raw secret matches are never logged or uploaded.
+
+Image publication first uploads immutable content by digest, scans AMD64/ARM64 and only then assigns version tags to the scanned manifest. SBOM/provenance describe build inputs; they are not independent publisher signatures. Actions, Node base and scanner image are pinned and maintained by weekly Dependabot PRs; automatic merging is disabled. Weekly scans use fresh vulnerability data for the current released image. A clean result is point-in-time, not a guarantee against future advisories or parser exploits.
+
+The native companion uses Apple's system libraries. Keep macOS and Node patched. Windows filesystem ACL privacy is operator-controlled; POSIX mode checks do not establish equivalent Windows ACL isolation. Use a dedicated protected account/state directory. Only the latest release is maintained.

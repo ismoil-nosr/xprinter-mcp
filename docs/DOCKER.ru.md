@@ -2,9 +2,9 @@
 
 [English](DOCKER.md) · **Русский** · [简体中文](DOCKER.zh-CN.md)
 
-Готовый образ **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** поддерживает Intel/AMD (`linux/amd64`) и ARM (`linux/arm64`). В нём уже есть Node 24, MCP-сервер, зафиксированные зависимости и SSH. Он запускается в Docker Desktop на Mac/Windows и Docker Engine на Linux. Для воспроизводимого запуска используйте версию или digest из релиза; `latest` обновляется с релизами.
+Готовый образ **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.1`** поддерживает Intel/AMD (`linux/amd64`) и ARM (`linux/arm64`). В нём уже есть Node 24, MCP-сервер, зафиксированные зависимости и SSH. Он запускается в Docker Desktop на Mac/Windows и Docker Engine на Linux. Для воспроизводимого запуска используйте версию или digest из релиза; `latest` обновляется с релизами.
 
-MCP работает **в контейнере**, а USB-принтер подключён к Mac с установленным [Open Xprinter 0.3.0+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest) и настроенной очередью `XP330B_OpenSource`. Контейнер вызывает генератор этикеток и CUPS на Mac через SSH. **Node и пакет MCP на Mac с принтером устанавливать не нужно.** Нужны обычный авторизованный Mac-аккаунт с SSH, доступная сеть и бодрствующий Mac. Прямой USB-бэкенд для Linux/Windows пока не реализован.
+MCP работает **в контейнере**, а USB-принтер подключён к Mac с установленным [Open Xprinter 0.3.1+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest) и настроенной очередью `XP330B_OpenSource`. Контейнер вызывает генератор этикеток и CUPS на Mac через SSH. **Node и пакет MCP на Mac с принтером устанавливать не нужно.** Нужны обычный авторизованный Mac-аккаунт с SSH, доступная сеть и бодрствующий Mac. Прямой USB-бэкенд для Linux/Windows пока не реализован.
 
 Docker Desktop [не предоставляет прямую передачу USB](https://docs.docker.com/desktop/troubleshoot-and-support/faqs/general/#can-i-pass-through-a-usb-device-to-a-container); Linux-контейнер также не запускает macOS AppKit. Привилегированный контейнер, Docker socket, общий доступ к CUPS и открытый порт принтера не требуются. Сохраняются все восемь инструментов, три языка, права OAuth, приватные превью, лимиты и квитанции повторов.
 
@@ -39,7 +39,7 @@ host.docker.internal ssh-ed25519 REPLACE_WITH_VERIFIED_PUBLIC_HOST_KEY
 
 ## Скачать, проверить и подключить
 
-Скачайте `xprinter-docker-0.2.0.zip` и `SHA256SUMS.txt` из [релиза](https://github.com/ismoil-nosr/xprinter-mcp/releases/tag/v0.2.0), проверьте SHA-256 и распакуйте. Можно также клонировать репозиторий. Скопируйте `docker.env.example` в `docker.env` и задайте имя Mac-аккаунта, адрес Mac и пути к двум SSH-файлам. Укажите `XPRINTER_LANGUAGE=ru`.
+Скачайте `xprinter-docker-0.2.1.zip` и `SHA256SUMS.txt` из [релиза](https://github.com/ismoil-nosr/xprinter-mcp/releases/tag/v0.2.1), проверьте SHA-256 и распакуйте. Можно также клонировать репозиторий. Скопируйте `docker.env.example` в `docker.env` и задайте имя Mac-аккаунта, адрес Mac и пути к двум SSH-файлам. Укажите `XPRINTER_LANGUAGE=ru`.
 
 `host.docker.internal` подходит для Docker Desktop на Mac с принтером; на другом компьютере укажите доступное имя/IP этого Mac. `localhost` в контейнере означает сам контейнер. Приватный ключ должен иметь права 0600, оба файла — быть читаемыми для UID 1000 в контейнере; не открывайте приватный ключ всем пользователям. Если владельцы файлов мешают доступу, используйте [отдельный том ключей и готовую команду инициализации](DOCKER.md#ownership-troubleshooting).
 

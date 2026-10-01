@@ -2,9 +2,9 @@
 
 [English](DOCKER.md) · [Русский](DOCKER.ru.md) · [简体中文](DOCKER.zh-CN.md)
 
-Image: **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** (`linux/amd64` and `linux/arm64`). It includes Node 24, the compiled MCP server, locked production dependencies and OpenSSH. Docker Desktop on Windows/macOS and Docker Engine on Linux can run the same Linux image. Use the version tag or the release's image digest for repeatable deployments; `latest` follows releases.
+Image: **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.1`** (`linux/amd64` and `linux/arm64`). It includes Node 24, the compiled MCP server, locked production dependencies and OpenSSH. Docker Desktop on Windows/macOS and Docker Engine on Linux can run the same Linux image. Use the version tag or the release's image digest for repeatable deployments; `latest` follows releases.
 
-The MCP server runs **inside Docker**. The printer stays connected by USB to a Mac running **[Open Xprinter 0.3.0+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest)**. Docker uses SSH to invoke that Mac's native renderer and scoped CUPS tools. **Node and the MCP package do not need to be installed on the printer Mac in this mode.** The Mac needs the native app/driver, a configured `XP330B_OpenSource` queue and an awake, reachable SSH account. Direct USB hosting on Linux/Windows remains unimplemented.
+The MCP server runs **inside Docker**. The printer stays connected by USB to a Mac running **[Open Xprinter 0.3.1+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest)**. Docker uses SSH to invoke that Mac's native renderer and scoped CUPS tools. **Node and the MCP package do not need to be installed on the printer Mac in this mode.** The Mac needs the native app/driver, a configured `XP330B_OpenSource` queue and an awake, reachable SSH account. Direct USB hosting on Linux/Windows remains unimplemented.
 
 Docker Desktop [does not provide direct USB passthrough](https://docs.docker.com/desktop/troubleshoot-and-support/faqs/general/#can-i-pass-through-a-usb-device-to-a-container), and Linux containers cannot run macOS AppKit. No privileged container, Docker socket, USB passthrough, printer sharing or exposed CUPS port is needed. All eight MCP tools, three languages, OAuth scopes, private previews, print budgets and durable retry receipts use the same implementation as native hosting.
 
@@ -39,7 +39,7 @@ Use the exact DNS/IP in `XPRINTER_SSH_HOST`; for a nondefault port use `[host]:p
 
 ## 2. Download the ready configuration
 
-Download **`xprinter-docker-0.2.0.zip`** and `SHA256SUMS.txt` from [the release](https://github.com/ismoil-nosr/xprinter-mcp/releases/tag/v0.2.0), verify the checksum and extract the ZIP. Alternatively clone this repository; Docker does not require Node/Git after you have the configuration files.
+Download **`xprinter-docker-0.2.1.zip`** and `SHA256SUMS.txt` from [the release](https://github.com/ismoil-nosr/xprinter-mcp/releases/tag/v0.2.1), verify the checksum and extract the ZIP. Alternatively clone this repository; Docker does not require Node/Git after you have the configuration files.
 
 Copy `docker.env.example` to `docker.env`, then set:
 
@@ -91,7 +91,7 @@ docker run --rm --user 0:0 --cap-drop=ALL --cap-add=CHOWN --cap-add=DAC_OVERRIDE
   --mount type=volume,source=xprinter-mcp-ssh,target=/credentials \
   --mount "type=bind,source=$PWD/secrets/id_ed25519,target=/input/key,readonly" \
   --mount "type=bind,source=$PWD/secrets/known_hosts,target=/input/hosts,readonly" \
-  --entrypoint sh ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0 -ec \
+  --entrypoint sh ghcr.io/ismoil-nosr/xprinter-mcp:0.2.1 -ec \
   'umask 077; chown -R 0:0 /credentials; chmod 700 /credentials; cp /input/key /credentials/id_ed25519; cp /input/hosts /credentials/known_hosts; chmod 600 /credentials/*; chown -R 1000:1000 /credentials'
 ```
 

@@ -20,7 +20,7 @@ if (tool === 'lpstat') {
         pdfBase64: Buffer.from('%PDF-1.4\nSynthetic SSH fixture only').toString('base64'),
         previewBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5iUAAAAASUVORK5CYII=' }));
 } else if (tool === 'plutil') {
-    if (args[0] === '-extract') console.log('0.3.0');
+    if (args[0] === '-extract') console.log('0.3.1');
     else process.stdout.write(readFileSync(0));
 } else if (tool === 'lp') {
     const pdf = readFileSync(0);

@@ -36,3 +36,7 @@ A synthetic CUPS job was submitted with `-H hold` on the development Mac, verifi
 ## Requires operator verification
 
 Actual public HTTPS/TLS, OAuth tenant/discovery/client registration/login, remote network access and each AI client's tool approval policy must be configured and tested by the operator. No public endpoint has been provisioned by this repository. Windows/Linux clients are protocol-compatible; direct USB hosting there is not implemented. Keep stock settings accurate, inspect/scan the first physical label, and never infer physical print success from a CUPS receipt alone.
+
+## Security maintenance (0.2.1)
+
+On 2026-10-01, all 31 local MCP tests passed with the native 0.3.1 renderer, including both protocol eras, OAuth/ownership, multilingual metadata, print/cancel scopes, retry/uncertain receipt behavior and persistent budgets. Clean archive installation and real Docker/SSH fixture recreation tests passed. Fixtures never access a physical printer. The rebuilt ARM64 production filesystem returned zero vulnerability advisories and zero secret matches with pinned Trivy 0.75.0. The application's full npm audit, including development dependencies, returned zero advisories. CI additionally scans both exact release architectures before promoting tags. Results reflect the vulnerability databases at scan time, not a permanent security guarantee.

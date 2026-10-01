@@ -8,7 +8,7 @@ Let AI clients prepare, preview and print labels on an **Xprinter XP-330B** usin
 
 ## Ready Docker image
 
-**`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** supports Intel/AMD and ARM. Download the release's Docker quick-start ZIP, set the Mac SSH account/key/verified host key in `docker.env`, then:
+**`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.1`** supports Intel/AMD and ARM. Download the release's Docker quick-start ZIP, set the Mac SSH account/key/verified host key in `docker.env`, then:
 
 ```sh
 docker compose --env-file docker.env pull xprinter
@@ -16,16 +16,16 @@ docker compose --env-file docker.env run --rm -T xprinter doctor
 docker compose --env-file docker.env run --rm -T xprinter
 ```
 
-The last command starts MCP stdio; [the client JSON template](examples/docker.json) connects an AI app. Node and MCP dependencies are already in the image: **the printer Mac needs only Open Xprinter 0.3.0+ and SSH**, with its project queue configured. Printing starts disabled. The named state volume preserves retry receipts when containers are recreated; enabling printing without it is refused. An optional Compose HTTP profile retains mandatory OAuth and publishes only to host loopback. [English](docs/DOCKER.md) · [Русский](docs/DOCKER.ru.md) · [简体中文](docs/DOCKER.zh-CN.md).
+The last command starts MCP stdio; [the client JSON template](examples/docker.json) connects an AI app. Node and MCP dependencies are already in the image: **the printer Mac needs only Open Xprinter 0.3.1+ and SSH**, with its project queue configured. Printing starts disabled. The named state volume preserves retry receipts when containers are recreated; enabling printing without it is refused. An optional Compose HTTP profile retains mandatory OAuth and publishes only to host loopback. [English](docs/DOCKER.md) · [Русский](docs/DOCKER.ru.md) · [简体中文](docs/DOCKER.zh-CN.md).
 
 ## Install on the printer Mac
 
-1. Install **[Open Xprinter 0.3.0 or newer](https://github.com/ismoil-nosr/xprinter-macos/releases/latest)**, connect USB, configure the `XP330B_OpenSource` queue and verify one label in the native app. The driver package is currently unsigned by Apple; follow its installation guide. Use the actual label dimensions and gap.
+1. Install **[Open Xprinter 0.3.1 or newer](https://github.com/ismoil-nosr/xprinter-macos/releases/latest)**, connect USB, configure the `XP330B_OpenSource` queue and verify one label in the native app. The driver package is currently unsigned by Apple; follow its installation guide. Use the actual label dimensions and gap.
 2. Install **[Node.js 24 LTS or newer](https://nodejs.org/en/download)** on the server Mac. The native app/driver themselves do not need Node.
 3. Download the `.tgz` and `SHA256SUMS.txt` from this repository's release, verify the archive with `shasum -a 256`, then install the local archive:
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.2.0.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.2.1.tgz
 xprinter-mcp doctor
 ```
 
@@ -137,8 +137,10 @@ npm test
 npm pack
 ```
 
-Core tests run on Linux, Windows and macOS with synthetic printer adapters. Real native integration tests require a built/installed 0.3.0+ app and `XPRINTER_RENDERER` set to its executable. They consume no paper. CI also validates real rendering on macOS 14 ARM, macOS 15 Intel and macOS 26 ARM. See [validation and its limits](docs/VALIDATION.md).
+Core tests run on Linux, Windows and macOS with synthetic printer adapters. Real native integration tests require a built/installed 0.3.1+ app and `XPRINTER_RENDERER` set to its executable. They consume no paper. CI also validates real rendering on macOS 14 ARM, macOS 15 Intel and macOS 26 ARM. See [validation and its limits](docs/VALIDATION.md).
 
 To remove a global install: stop its MCP clients/service, run `npm uninstall --global @ismoil-nosr/xprinter-mcp`, and remove its client configuration. The native app/driver and private state are retained. If you choose to erase the state directory after stopping **all** server processes, you also erase retry receipts; inspect pending/uncertain jobs first. Never keep a state database on a network filesystem or share one HTTP service through untrusted local accounts.
 
 [MIT](LICENSE), copyright Ismoil Nosr. Independent of Xprinter; no vendor binaries, PPDs or SDK source are bundled.
+
+Security maintenance includes npm audit, CodeQL, PR dependency review, weekly Dependabot/image scans and digest-based image promotion after both architectures pass. [Policy and private reporting](SECURITY.md). Upgrade the printer Mac to Open Xprinter 0.3.1+ for the independent renderer deadline.

@@ -9,7 +9,7 @@ export class PrinterService {
     private renders = 0;
     constructor(readonly config: Config, readonly store: Store, readonly renderer: Renderer, readonly printer: PrinterBackend) {}
     capabilities() {
-        return { queue: QUEUE, backend: 'macOS CUPS USB', model: 'XP-330B', dpi: 203, nativeDriverMinimum: '0.3.0',
+        return { queue: QUEUE, backend: 'macOS CUPS USB', model: 'XP-330B', dpi: 203, nativeDriverMinimum: '0.3.1',
             widthMm: { min: 20, max: 76 }, heightMm: { min: 10, max: 200 }, stocks: ['gap', 'black-mark', 'continuous'],
             labelKinds: ['code128', 'qr', 'text'], defaultProfile: { widthMm: 58, heightMm: 40, stock: 'gap', gapMm: 2, darkness: 7 },
             printEnabled: this.config.allowPrint, maxLabelsPerJob: this.config.maxLabelsPerJob, maxLabelsPerHour: this.config.maxLabelsPerHour,

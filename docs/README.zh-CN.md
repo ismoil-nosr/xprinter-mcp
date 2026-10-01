@@ -6,7 +6,7 @@
 
 ## Docker 快速开始
 
-镜像 **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** 内含 Node 和全部 MCP 依赖，支持 Intel/AMD 及 ARM。打印机 Mac 只需要 Open Xprinter 0.3.0+ 与 SSH，**无需安装 Node/MCP**。下载发行版中的 Docker ZIP，填写 `docker.env` 的 Mac 账户、专用 SSH 密钥和已验证主机密钥：
+镜像 **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.1`** 内含 Node 和全部 MCP 依赖，支持 Intel/AMD 及 ARM。打印机 Mac 只需要 Open Xprinter 0.3.1+ 与 SSH，**无需安装 Node/MCP**。下载发行版中的 Docker ZIP，填写 `docker.env` 的 Mac 账户、专用 SSH 密钥和已验证主机密钥：
 
 ```sh
 docker compose --env-file docker.env pull xprinter
@@ -18,12 +18,12 @@ docker compose --env-file docker.env run --rm -T xprinter
 
 ## 在打印机所在的 Mac 上安装
 
-1. 安装 [Open Xprinter 0.3.0 或更高版本](https://github.com/ismoil-nosr/xprinter-macos/releases/latest)，配置 `XP330B_OpenSource` 队列，并在原生应用中确认一张标签正确打印。驱动安装包暂未获得 Apple 签名，请按其安装指南批准。
+1. 安装 [Open Xprinter 0.3.1 或更高版本](https://github.com/ismoil-nosr/xprinter-macos/releases/latest)，配置 `XP330B_OpenSource` 队列，并在原生应用中确认一张标签正确打印。驱动安装包暂未获得 Apple 签名，请按其安装指南批准。
 2. 安装 [Node.js 24 LTS 或更高版本](https://nodejs.org/en/download)。普通驱动和原生应用本身不需要 Node。
 3. 从 [MCP Releases](https://github.com/ismoil-nosr/xprinter-mcp/releases/latest) 下载 `.tgz` 和 `SHA256SUMS.txt`，验证 SHA-256 后运行：
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.2.0.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.2.1.tgz
 xprinter-mcp doctor
 ```
 
@@ -87,10 +87,14 @@ npm test
 npm pack
 ```
 
-在 Mac 上设置 `XPRINTER_RENDERER` 为 Open Xprinter 0.3.0+ 内的 executable 绝对路径，可运行真实生成器集成测试。这些测试不打印纸张。CI 在 Windows/Linux/macOS 上检查协议核心，在 ARM/Intel Mac 上检查原生生成器。[验证范围](VALIDATION.md)。
+在 Mac 上设置 `XPRINTER_RENDERER` 为 Open Xprinter 0.3.1+ 内的 executable 绝对路径，可运行真实生成器集成测试。这些测试不打印纸张。CI 在 Windows/Linux/macOS 上检查协议核心，在 ARM/Intel Mac 上检查原生生成器。[验证范围](VALIDATION.md)。
 
 欢迎中文 Issue、Pull Request、文档及翻译改进。请阅读[贡献指南](../CONTRIBUTING.md)和[架构](ARCHITECTURE.md)。不得提交没有再分发许可的厂商驱动、PPD、SDK 或客户标签。
 
 卸载时先停止客户端/服务，运行 `npm uninstall --global @ismoil-nosr/xprinter-mcp`，并移除客户端 MCP 配置。原生驱动和私有状态会保留。不要在网络文件系统上存放数据库。其他 Mac 应用的直接打印不受 MCP 预算限制。
 
 仓库独立发布：[xprinter-macos](https://github.com/ismoil-nosr/xprinter-macos) 负责原生驱动、应用和生成器；本仓库负责 MCP、授权、任务记录和客户端文档。未来可添加 Windows/Linux USB 后端而无需更改客户端 API。MIT 许可证；独立于 Xprinter/芯烨。
+
+## 安全更新
+
+0.2.1 从镜像运行时文件系统移除不需要的 npm/npx/Yarn/Corepack，并要求具有独立 25 秒渲染期限的 Open Xprinter 0.3.1+。CI 执行 npm 依赖审计、CodeQL、PR 依赖审查及两种架构的 Docker 扫描；已知高危/严重漏洞或任何镜像密钥匹配会阻止发布。Dependabot 与每周扫描用于跟踪新风险。扫描结果仅反映检查时的数据；请更新 macOS/Node 并保护 SSH 密钥。[安全策略与私密报告](../SECURITY.md)。

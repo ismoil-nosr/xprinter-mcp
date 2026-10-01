@@ -69,5 +69,5 @@ try {
 } catch (error) {
     // Avoid printing environment values, access tokens or Zod input values.
     if (error instanceof PublicError) process.stderr.write(`${error.code}: ${error.message}\n`);
-    process.stderr.write('MCP startup failed. Check Node 24+, Open Xprinter 0.3.0+, backend/SSH configuration, credential permissions and persistent state volume. See --help.\n'); process.exit(1);
+    process.stderr.write('MCP startup failed. Check Node 24+, Open Xprinter 0.3.1+, backend/SSH configuration, credential permissions and persistent state volume. See --help.\n'); process.exit(1);
 }

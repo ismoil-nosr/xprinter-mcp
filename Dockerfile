@@ -15,6 +15,8 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
 FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS runtime
 RUN apk add --no-cache openssh-client \
+    && rm -rf /usr/local/lib/node_modules /opt/yarn-v* \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg \
     && mkdir -p /var/lib/xprinter /run/secrets \
     && chown node:node /var/lib/xprinter \
     && chmod 0700 /var/lib/xprinter
@@ -23,7 +25,7 @@ COPY --from=dependencies /dependencies/node_modules ./node_modules
 COPY --from=build /build/dist ./dist
 COPY package.json npm-shrinkwrap.json LICENSE SECURITY.md README.md ./
 COPY docs ./docs
-ARG VERSION=0.2.0
+ARG VERSION=0.2.1
 ARG REVISION=unknown
 LABEL org.opencontainers.image.title="Open Xprinter MCP" \
       org.opencontainers.image.description="Label preparation, preview and controlled printing; SSH to the Mac hosting the XP-330B USB printer" \

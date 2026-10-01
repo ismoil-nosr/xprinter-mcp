@@ -2,9 +2,9 @@
 
 [English](DOCKER.md) · [Русский](DOCKER.ru.md) · **简体中文**
 
-官方镜像 **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** 支持 Intel/AMD（`linux/amd64`）和 ARM（`linux/arm64`），内含 Node 24、编译后的 MCP 服务器、锁定的生产依赖及 OpenSSH。在 macOS/Windows 的 Docker Desktop 或 Linux 的 Docker Engine 中使用同一 Linux 镜像。固定版本或使用发行版中的镜像 digest 可重复部署；`latest` 随发行版更新。
+官方镜像 **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.1`** 支持 Intel/AMD（`linux/amd64`）和 ARM（`linux/arm64`），内含 Node 24、编译后的 MCP 服务器、锁定的生产依赖及 OpenSSH。在 macOS/Windows 的 Docker Desktop 或 Linux 的 Docker Engine 中使用同一 Linux 镜像。固定版本或使用发行版中的镜像 digest 可重复部署；`latest` 随发行版更新。
 
-MCP 服务器运行在**容器内**。打印机通过 USB 连接到安装了 [Open Xprinter 0.3.0+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest) 的 Mac，并配置 `XP330B_OpenSource` 队列。容器通过 SSH 调用 Mac 的原生标签渲染器及 CUPS 工具。**这种模式不需要在打印机 Mac 上安装 Node 或 MCP 软件包。** Mac 需要已授权的普通 SSH 账户、可达的网络和保持唤醒。当前不支持在 Linux/Windows 上直接托管 USB 打印机。
+MCP 服务器运行在**容器内**。打印机通过 USB 连接到安装了 [Open Xprinter 0.3.1+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest) 的 Mac，并配置 `XP330B_OpenSource` 队列。容器通过 SSH 调用 Mac 的原生标签渲染器及 CUPS 工具。**这种模式不需要在打印机 Mac 上安装 Node 或 MCP 软件包。** Mac 需要已授权的普通 SSH 账户、可达的网络和保持唤醒。当前不支持在 Linux/Windows 上直接托管 USB 打印机。
 
 Docker Desktop [不提供直接 USB 透传](https://docs.docker.com/desktop/troubleshoot-and-support/faqs/general/#can-i-pass-through-a-usb-device-to-a-container)，Linux 容器也不能运行 macOS AppKit。无需特权容器、Docker socket、CUPS 共享或公开打印机端口。八个 MCP 工具、三种语言、OAuth 权限、私有预览、打印额度及持久重试回执均使用相同实现。
 
@@ -39,7 +39,7 @@ host.docker.internal ssh-ed25519 REPLACE_WITH_VERIFIED_PUBLIC_HOST_KEY
 
 ## 下载、检查并连接 AI
 
-从[发行版](https://github.com/ismoil-nosr/xprinter-mcp/releases/tag/v0.2.0)下载 `xprinter-docker-0.2.0.zip` 和 `SHA256SUMS.txt`，校验 SHA-256 后解压；也可以克隆仓库。将 `docker.env.example` 复制为 `docker.env`，填写 Mac 用户名、地址和两个 SSH 文件路径，并设置 `XPRINTER_LANGUAGE=zh-Hans`。
+从[发行版](https://github.com/ismoil-nosr/xprinter-mcp/releases/tag/v0.2.1)下载 `xprinter-docker-0.2.1.zip` 和 `SHA256SUMS.txt`，校验 SHA-256 后解压；也可以克隆仓库。将 `docker.env.example` 复制为 `docker.env`，填写 Mac 用户名、地址和两个 SSH 文件路径，并设置 `XPRINTER_LANGUAGE=zh-Hans`。
 
 同一 Mac 的 Docker Desktop 使用 `host.docker.internal`；其他电脑使用可达的 Mac IP/DNS。容器中的 `localhost` 指向容器自身。私钥权限必须为 0600，两份文件必须可由容器的 UID 1000 读取；不要将私钥改成全局可读。所有者不匹配时，请使用[独立凭据卷及初始化命令](DOCKER.md#ownership-troubleshooting)。
 

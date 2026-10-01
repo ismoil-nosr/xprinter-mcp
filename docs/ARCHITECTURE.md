@@ -2,7 +2,7 @@
 
 `xprinter-macos` owns the macOS driver, native UI, universal Installer and shared label renderer. `xprinter-mcp` owns the MCP protocol, authentication, user isolation, durable print receipts and clients' setup guides. Independent versioning avoids rebuilding the native installer for a protocol or OAuth change.
 
-The API is platform-neutral. A Windows/Linux/macOS AI client connects through the same MCP protocol. MCP can run on the printer Mac or in a Linux Docker container. `CupsPrinter` and `NativeRenderer` invoke macOS tools locally or through the `ssh.ts` command runner: only the USB driver and renderer need Mac/Open Xprinter 0.3.0+ in Docker mode. Future direct Windows/Linux USB hosts need separately implemented and hardware-tested `PrinterBackend`/`Renderer` adapters, not a second client API.
+The API is platform-neutral. A Windows/Linux/macOS AI client connects through the same MCP protocol. MCP can run on the printer Mac or in a Linux Docker container. `CupsPrinter` and `NativeRenderer` invoke macOS tools locally or through the `ssh.ts` command runner: only the USB driver and renderer need Mac/Open Xprinter 0.3.1+ in Docker mode. Future direct Windows/Linux USB hosts need separately implemented and hardware-tested `PrinterBackend`/`Renderer` adapters, not a second client API.
 
 ```mermaid
 flowchart LR

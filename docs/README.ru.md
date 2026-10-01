@@ -6,7 +6,7 @@ MCP-сервер для AI: подготовка этикеток, превью,
 
 ## Быстрый запуск в Docker
 
-Образ **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** содержит Node и все MCP-зависимости; есть версии для Intel/AMD и ARM. На Mac с USB-принтером достаточно обычного Open Xprinter 0.3.0+ и SSH: устанавливать Node/MCP на этот Mac не нужно. Скачайте Docker ZIP из релиза, заполните `docker.env` с аккаунтом, отдельным SSH-ключом и проверенным ключом сервера:
+Образ **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.1`** содержит Node и все MCP-зависимости; есть версии для Intel/AMD и ARM. На Mac с USB-принтером достаточно обычного Open Xprinter 0.3.1+ и SSH: устанавливать Node/MCP на этот Mac не нужно. Скачайте Docker ZIP из релиза, заполните `docker.env` с аккаунтом, отдельным SSH-ключом и проверенным ключом сервера:
 
 ```sh
 docker compose --env-file docker.env pull xprinter
@@ -18,12 +18,12 @@ docker compose --env-file docker.env run --rm -T xprinter
 
 ## Установка на Mac с принтером
 
-1. Установите [Open Xprinter 0.3.0+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest), настройте очередь `XP330B_OpenSource` и проверьте одну этикетку в обычном приложении. Установщик пока без подписи Apple; следуйте его инструкции установки.
+1. Установите [Open Xprinter 0.3.1+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest), настройте очередь `XP330B_OpenSource` и проверьте одну этикетку в обычном приложении. Установщик пока без подписи Apple; следуйте его инструкции установки.
 2. Установите [Node.js 24 LTS или новее](https://nodejs.org/en/download). Обычный драйвер и приложение Node не требуют.
 3. Скачайте `.tgz` и `SHA256SUMS.txt` из [релиза MCP](https://github.com/ismoil-nosr/xprinter-mcp/releases/latest). Проверьте SHA-256 архива, затем:
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.2.0.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.2.1.tgz
 xprinter-mcp doctor
 ```
 
@@ -85,8 +85,12 @@ npm test
 npm pack
 ```
 
-Для проверки настоящего генератора задайте `XPRINTER_RENDERER` — абсолютный путь к executable внутри Open Xprinter 0.3.0+. Тесты не печатают бумагу. В CI ядро проверяется на Windows/Linux/macOS, генератор — на Mac ARM и Intel. [Результаты и границы проверки](VALIDATION.md).
+Для проверки настоящего генератора задайте `XPRINTER_RENDERER` — абсолютный путь к executable внутри Open Xprinter 0.3.1+. Тесты не печатают бумагу. В CI ядро проверяется на Windows/Linux/macOS, генератор — на Mac ARM и Intel. [Результаты и границы проверки](VALIDATION.md).
 
 Удаление: остановите клиенты/службу и выполните `npm uninstall --global @ismoil-nosr/xprinter-mcp`, затем удалите настройки MCP из клиента. Драйвер и приватная база сохраняются. Не храните базу на сетевом диске. Другие приложения Mac печатают вне ограничений MCP.
 
 Два репозитория выпускаются независимо: [xprinter-macos](https://github.com/ismoil-nosr/xprinter-macos) — драйвер/приложение/генератор, этот — протокол/права/клиентские инструкции. Будущие Windows/Linux USB-бэкенды можно добавить сюда без изменения общего API. [Архитектура](ARCHITECTURE.md), [вклад в проект](../CONTRIBUTING.md), [безопасность](../SECURITY.md). MIT; независимое решение, не официальный продукт Xprinter.
+
+## Обновления безопасности
+
+Версия 0.2.1 убирает ненужные npm/npx/Yarn/Corepack из рабочей файловой системы образа и требует Open Xprinter 0.3.1+ с независимым таймером генератора на 25 секунд. CI проверяет npm-зависимости, исходники через CodeQL, зависимости PR и оба Docker-образа; известные high/critical уязвимости и найденные секреты блокируют релиз. Dependabot и еженедельные проверки помогают отслеживать новые уязвимости. Результат проверки действует на момент сканирования; обновляйте macOS/Node и защищайте SSH-ключи. [Политика и приватное сообщение](../SECURITY.md).

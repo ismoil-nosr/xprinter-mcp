@@ -57,8 +57,8 @@ export class NativeRenderer implements Renderer {
         const info = posix.join(posix.dirname(posix.dirname(this.config.renderer)), 'Info.plist');
         // Prevent an older app from treating an unknown flag as a request to open its GUI.
         const version = (await this.run('/usr/bin/plutil', ['-extract', 'CFBundleShortVersionString', 'raw', '-o', '-', info])).toString().trim();
-        if (!/^\d+\.\d+\.\d+$/.test(version) || version.localeCompare('0.3.0', undefined, { numeric: true }) < 0) {
-            throw new PublicError('driver_upgrade', 'Install Open Xprinter 0.3.0 or newer before using MCP.');
+        if (!/^\d+\.\d+\.\d+$/.test(version) || version.localeCompare('0.3.1', undefined, { numeric: true }) < 0) {
+            throw new PublicError('driver_upgrade', 'Install Open Xprinter 0.3.1 or newer before using MCP.');
         }
         const output = JSON.parse((await this.run(this.config.renderer, ['--mcp-render'], Buffer.from(JSON.stringify(request)), 16 * 1024 * 1024, 30_000, true)).toString()) as unknown;
         const failure = z.object({ error: z.string().max(500) }).safeParse(output);

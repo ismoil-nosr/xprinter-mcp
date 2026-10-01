@@ -1,6 +1,6 @@
 {
   "name": "@ismoil-nosr/xprinter-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Local and authenticated remote MCP access to Open Xprinter on macOS",
   "type": "module",
   "license": "MIT",

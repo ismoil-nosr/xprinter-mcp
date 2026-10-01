@@ -56,7 +56,7 @@ try {
     const metadata = JSON.parse(docker('image', 'inspect', image));
     assert.equal(metadata[0].Config.User, 'node');
     assert.equal(metadata[0].Config.Labels['org.opencontainers.image.source'], 'https://github.com/ismoil-nosr/xprinter-mcp');
-    assert.equal(docker('run', '--rm', '--entrypoint', 'node', image, '-e', "const f=require('fs');if(f.existsSync('/app/test')||f.existsSync('/app/src')||f.existsSync('/root/.ssh'))process.exit(1);console.log('clean')"), 'clean');
+    assert.equal(docker('run', '--rm', '--entrypoint', 'node', image, '-e', "const f=require('fs');if(['/app/test','/app/src','/root/.ssh','/usr/local/lib/node_modules','/usr/local/bin/npm','/usr/local/bin/npx'].some(p=>f.existsSync(p)))process.exit(1);console.log('clean')"), 'clean');
     execFileSync('ssh-keygen', ['-q', '-t', 'ed25519', '-N', '', '-f', key], { stdio: 'pipe' });
     docker('build', '--tag', fixtureImage, '--file', resolve('test/docker/sshd.Dockerfile'), resolve('test/docker'));
     docker('network', 'create', network);
