@@ -33,6 +33,9 @@ try {
     const scan = spawnSync('docker', args, { encoding: 'utf8', timeout: 360_000, maxBuffer: 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
     if (scan.error || scan.status !== 0) throw new Error('Container scan failed; no clean result is claimed. Check Docker, disk space and registry/database connectivity.');
     const report = JSON.parse(readFileSync(join(output, 'scan.json'), 'utf8'));
+    const config = report.Metadata?.ImageConfig;
+    const actualPlatform = config?.os && config?.architecture ? `${config.os}/${config.architecture}` : undefined;
+    if (!actualPlatform || (options['--platform'] && actualPlatform !== options['--platform'])) throw new Error('Scanner did not verify the requested image architecture.');
     const counts = {}, advisories = []; let secrets = 0;
     for (const result of report.Results ?? []) {
         secrets += (result.Secrets ?? []).length;
@@ -43,7 +46,7 @@ try {
     }
     const blocked = secrets > 0 || (counts.HIGH ?? 0) > 0 || (counts.CRITICAL ?? 0) > 0;
     // Secret values, snippets and matched source are never printed or uploaded.
-    console.log(JSON.stringify({ scanner, platform: options['--platform'] ?? 'archive platform', vulnerabilityCounts: counts, advisories, secretFindings: secrets, blocked }));
+    console.log(JSON.stringify({ scanner, platform: actualPlatform, vulnerabilityCounts: counts, advisories, secretFindings: secrets, blocked }));
     if (blocked) process.exitCode = 1;
 } finally {
     rmSync(folder, { recursive: true, force: true });
