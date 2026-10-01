@@ -91,11 +91,11 @@ docker run --rm --user 0:0 --cap-drop=ALL --cap-add=CHOWN --cap-add=DAC_OVERRIDE
   --mount type=volume,source=xprinter-mcp-ssh,target=/credentials \
   --mount "type=bind,source=$PWD/secrets/id_ed25519,target=/input/key,readonly" \
   --mount "type=bind,source=$PWD/secrets/known_hosts,target=/input/hosts,readonly" \
-  --entrypoint sh ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0 -c \
-  'umask 077; cp /input/key /credentials/id_ed25519; cp /input/hosts /credentials/known_hosts; chown -R 1000:1000 /credentials; chmod 700 /credentials; chmod 600 /credentials/*'
+  --entrypoint sh ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0 -ec \
+  'umask 077; chown -R 0:0 /credentials; chmod 700 /credentials; cp /input/key /credentials/id_ed25519; cp /input/hosts /credentials/known_hosts; chmod 600 /credentials/*; chown -R 1000:1000 /credentials'
 ```
 
-Replace the **two key-file bind mounts** in your Docker run arguments with **one** volume mount: `type=volume,source=xprinter-mcp-ssh,target=/run/secrets,readonly`. In Compose replace those two bind-volume entries with `- type: volume`, `source: ssh`, `target: /run/secrets`, `read_only: true`, and declare `ssh: { external: true, name: xprinter-mcp-ssh }` under top-level `volumes`. The MCP container continues to run as UID 1000; only this scoped initialization runs as root **inside a container**, with no host root or Docker socket access. Reinitialize this credential volume intentionally when rotating the key/host identity; do not erase the state volume.
+Replace the **two key-file bind mounts** in your Docker run arguments with **one** volume mount: `type=volume,source=xprinter-mcp-ssh,target=/run/secrets,readonly`. In Compose replace those two bind-volume entries with `- type: volume`, `source: ssh`, `target: /run/secrets`, `read_only: true`, and declare `ssh: { external: true, name: xprinter-mcp-ssh }` under top-level `volumes`. The MCP container continues to run as UID 1000; only this scoped initialization runs as root **inside a container**, with no host root or Docker socket access. Stop MCP clients/service before intentionally reinitializing this credential volume when rotating the key/host identity; do not erase the state volume. The container integration test exercises this initialization/rotation path too.
 
 `native_failed`/`configured: false`: check SSH reachability, host key, key authorization, native app version, queue and Mac sleep. `persistent_state_required`: mount the state volume. `backend_changed`: restore that volume's original target. `uncertain`: inspect the Mac queue and paper, then reuse the same print key to inspect the existing receipt; never automatically retry printing under a new key.
 

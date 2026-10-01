@@ -13,16 +13,22 @@ import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 const image = process.env.XPRINTER_TEST_IMAGE ?? 'xprinter-mcp:docker-test';
 const suffix = randomUUID().slice(0, 8), prefix = `xprinter-check-${suffix}`;
 const network = `${prefix}-network`, fixtureName = `${prefix}-mac`, volume = `${prefix}-state`;
+const credentials = `${prefix}-credentials`;
 const fixtureImage = `${prefix}-fixture`, directory = mkdtempSync(join(tmpdir(), 'xprinter-docker-'));
 const docker = (...args) => execFileSync('docker', args, { encoding: 'utf8', timeout: 120_000, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const key = join(directory, 'key'), hosts = join(directory, 'known_hosts');
 const publicKey = join(directory, 'key.pub');
 const base = ['run', '--rm', '-i', '--init', '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges', '--pids-limit=64', '--memory=512m',
     '--network', network, '--mount', `type=volume,source=${volume},target=/var/lib/xprinter`,
-    '--mount', `type=bind,source=${key},target=/run/secrets/id_ed25519,readonly`,
-    '--mount', `type=bind,source=${hosts},target=/run/secrets/known_hosts,readonly`,
+    '--mount', `type=volume,source=${credentials},target=/run/secrets,readonly`,
     '-e', 'XPRINTER_SSH_HOST=printer-mac', '-e', 'XPRINTER_SSH_PORT=2222', '-e', 'XPRINTER_SSH_USER=printer', '-e', 'XPRINTER_ALLOW_PRINT=1'];
 let client;
+function initializeCredentials() {
+    docker('run', '--rm', '--user', '0:0', '--cap-drop=ALL', '--cap-add=CHOWN', '--cap-add=DAC_OVERRIDE', '--security-opt=no-new-privileges',
+        '--mount', `type=volume,source=${credentials},target=/credentials`,
+        '--mount', `type=bind,source=${key},target=/input/key,readonly`, '--mount', `type=bind,source=${hosts},target=/input/hosts,readonly`,
+        '--entrypoint', 'sh', image, '-ec', 'umask 077; chown -R 0:0 /credentials; chmod 700 /credentials; cp /input/key /credentials/id_ed25519; cp /input/hosts /credentials/known_hosts; chmod 600 /credentials/*; chown -R 1000:1000 /credentials');
+}
 async function connect(options = {}) {
     client = new Client({ name: 'container-test', version: '1.0.0' }, options);
     const transport = new StdioClientTransport({ command: 'docker', args: [...base, image, 'stdio'], env: process.env, stderr: 'pipe' });
@@ -55,10 +61,12 @@ try {
     docker('build', '--tag', fixtureImage, '--file', resolve('test/docker/sshd.Dockerfile'), resolve('test/docker'));
     docker('network', 'create', network);
     docker('volume', 'create', volume);
+    docker('volume', 'create', credentials);
     docker('run', '--detach', '--name', fixtureName, '--network', network, '--network-alias', 'printer-mac',
         '--mount', `type=bind,source=${publicKey},target=/fixture/authorized_keys,readonly`, fixtureImage);
     const hostKey = docker('exec', fixtureName, 'cat', '/etc/ssh/ssh_host_ed25519_key.pub').split(' ').slice(0, 2).join(' ');
     writeFileSync(hosts, `[printer-mac]:2222 ${hostKey}\n`, { mode: 0o600 });
+    initializeCredentials();
     // The image must refuse loss of durable receipts and must never print in this case.
     const noVolume = [...base]; noVolume.splice(noVolume.indexOf(`type=volume,source=${volume},target=/var/lib/xprinter`) - 1, 2);
     const refused = spawnSync('docker', [...noVolume, image, 'stdio'], { encoding: 'utf8', timeout: 20_000 });
@@ -95,6 +103,7 @@ try {
     const changed = spawnSync('docker', [...base, '-e', 'XPRINTER_SSH_HOST=another-printer', image, 'doctor'], { encoding: 'utf8', timeout: 20_000 });
     assert.equal(changed.status, 1); assert.ok(changed.stderr.includes('backend_changed'));
     writeFileSync(hosts, '[printer-mac]:2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIInvalidUntrustedKey\n');
+    initializeCredentials();
     const untrusted = spawnSync('docker', [...base, image, 'doctor'], { encoding: 'utf8', timeout: 20_000 });
     assert.equal(untrusted.status, 1); assert.equal(JSON.parse(untrusted.stdout).configured, false);
     assert.equal(JSON.parse(docker('exec', fixtureName, 'cat', '/fixture-state/jobs.json')).length, 3);
@@ -119,7 +128,7 @@ try {
         durableContainerRecreation: 'passed', lostReceiptNoReplay: 'passed', hostKeyRejection: 'passed', noVolumeRejection: 'passed', httpOAuthRequired: 'passed', realPrinterAccess: false }));
 } finally {
     if (client) await client.close();
-    for (const args of [['rm', '--force', fixtureName], ['network', 'rm', network], ['volume', 'rm', volume], ['image', 'rm', fixtureImage]]) {
+    for (const args of [['rm', '--force', fixtureName], ['network', 'rm', network], ['volume', 'rm', volume], ['volume', 'rm', credentials], ['image', 'rm', fixtureImage]]) {
         try { docker(...args); } catch { /* only this test's UUID-scoped disposable resources */ }
     }
     rmSync(directory, { recursive: true, force: true });
