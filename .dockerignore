@@ -1,0 +1,13 @@
+# Explicit allowlist: never send credentials, private state, test fixtures or local dependencies to the builder.
+**
+!Dockerfile
+!package.json
+!npm-shrinkwrap.json
+!tsconfig.json
+!src
+!src/**
+!README.md
+!LICENSE
+!SECURITY.md
+!docs
+!docs/**

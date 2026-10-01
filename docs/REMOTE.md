@@ -2,6 +2,8 @@
 
 The USB printer stays attached to a Mac. An AI client anywhere can use the same MCP tools; it does not need a USB driver. Keep the Mac awake and reachable, choose the actual loaded stock, and grant access only to people allowed to print on that device.
 
+For a ready container with Node/MCP included, use [Docker quick start](DOCKER.md). Its SSH printer backend invokes the Mac's installed native app and CUPS without requiring Node on that Mac. The SSH setup below is different: it starts a native MCP process on the Mac, which does require Node there.
+
 ## SSH: simplest private connection
 
 Use macOS Remote Login only if you choose to enable it, an SSH key, and a restricted account allowed to access the configured CUPS queue. Test a normal SSH login and `xprinter-mcp doctor` before configuring your AI client. This project does not enable Remote Login, modify firewall settings or install a VPN.
@@ -28,7 +30,7 @@ Omit the print environment flag for preparation/preview only. SSH authenticates 
 
 ## HTTPS: OAuth resource server
 
-HTTP mode requires an external OAuth provider and an HTTPS reverse proxy. It always listens on `127.0.0.1`, with no anonymous HTTP option. No secrets/tokens are put in command arguments.
+HTTP mode requires an external OAuth provider and an HTTPS reverse proxy. Native hosting defaults to `127.0.0.1`; Docker's HTTP Compose profile listens inside the container and publishes only to host loopback. `XPRINTER_LISTEN_HOST=0.0.0.0` is an explicit operator override for container networking, not an anonymous mode. No secrets/tokens are put in command arguments.
 
 Example server environment (replace the placeholder URLs with your provider's actual values):
 

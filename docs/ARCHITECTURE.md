@@ -2,13 +2,13 @@
 
 `xprinter-macos` owns the macOS driver, native UI, universal Installer and shared label renderer. `xprinter-mcp` owns the MCP protocol, authentication, user isolation, durable print receipts and clients' setup guides. Independent versioning avoids rebuilding the native installer for a protocol or OAuth change.
 
-The API is platform-neutral. A Windows/Linux/macOS AI client connects through the same MCP protocol. That does not make a USB driver portable: the current server's `CupsPrinter` and `NativeRenderer` need macOS with Open Xprinter 0.3.0+. Future Windows/Linux USB hosts need separately implemented and hardware-tested `PrinterBackend`/`Renderer` adapters, not a second client API.
+The API is platform-neutral. A Windows/Linux/macOS AI client connects through the same MCP protocol. MCP can run on the printer Mac or in a Linux Docker container. `CupsPrinter` and `NativeRenderer` invoke macOS tools locally or through the `ssh.ts` command runner: only the USB driver and renderer need Mac/Open Xprinter 0.3.0+ in Docker mode. Future direct Windows/Linux USB hosts need separately implemented and hardware-tested `PrinterBackend`/`Renderer` adapters, not a second client API.
 
 ```mermaid
 flowchart LR
     AI[AI client: Windows / Linux / macOS] -->|stdio, SSH or OAuth HTTPS| MCP[xprinter-mcp]
     MCP --> Auth[Scopes and private owner state]
-    MCP --> Native[Native JSON label renderer]
+    MCP -->|local invocation or SSH from Docker| Native[Mac native JSON label renderer]
     Native --> Preview[PDF and first-page PNG]
     MCP -->|explicit print + durable receipt| CUPS[Scoped macOS CUPS queue]
     CUPS --> Driver[Open Xprinter raster-to-TSPL driver]
@@ -22,7 +22,8 @@ flowchart LR
 - `service.ts`: shared physical printer budgets, preparation and print workflow; no automatic retry of an uncertain submission.
 - `store.ts`: private local SQLite state, owner filtering, TTL/quota and transactional idempotency reservation.
 - `native.ts`: separately replaceable printer/renderer interfaces, fixed macOS executables, argument arrays, bounded subprocesses, verified CUPS job identity before cancellation.
-- `auth.ts` / `http.ts`: external OAuth resource-server verification, protected resource metadata, loopback listener, Host/Origin/CORS/body/rate/concurrency limits.
+- `ssh.ts`: operator-configured target, strict pinned host keys, dedicated key-file authentication, safe POSIX argument quoting, no agent/TTY/forwarding/retry, persistent Docker state guard. PDF and fixed IPP requests stream to the Mac over encrypted stdin; credentials never come from an MCP caller.
+- `auth.ts` / `http.ts`: external OAuth resource-server verification, protected resource metadata, loopback by default; explicit container listener with host-loopback publication, Host/Origin/CORS/body/rate/concurrency limits.
 - `cli.ts`: stdio, authenticated HTTP and read-only doctor; stdout is reserved for the protocol in stdio mode.
 
 ## Retry semantics

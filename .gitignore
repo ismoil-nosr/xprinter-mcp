@@ -7,3 +7,5 @@ dist/
 *.sqlite*
 coverage/
 native-driver/
+docker.env
+secrets/

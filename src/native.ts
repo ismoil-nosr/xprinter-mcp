@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 import { spawn } from 'node:child_process';
-import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { tmpdir, userInfo } from 'node:os';
+import { posix } from 'node:path';
+import { userInfo } from 'node:os';
 import { z } from 'zod';
 import { PublicError, QUEUE } from './config.js';
 import type { Config } from './config.js';
@@ -21,6 +20,7 @@ export interface PrinterBackend {
     jobState(job: Job): Promise<string>;
     cancel(job: Job, signal?: AbortSignal): Promise<void>;
 }
+export type CommandRunner = typeof command;
 
 export function command(executable: string, args: readonly string[], input?: Buffer, limit = 1024 * 1024, timeout = 10_000, allowFailureOutput = false): Promise<Buffer> {
     return new Promise((resolve, reject) => {
@@ -28,7 +28,7 @@ export function command(executable: string, args: readonly string[], input?: Buf
             env: { ...process.env, LC_ALL: 'C', LANG: 'C', CUPS_SERVER: '/private/var/run/cupsd', CUPS_ENCRYPTION: 'IfRequested' } });
         const chunks: Buffer[] = [];
         let bytes = 0, failed = false;
-        const timer = setTimeout(() => fail(new PublicError('command_timeout', 'A local printer operation timed out.')), timeout);
+        const timer = setTimeout(() => fail(new PublicError('command_timeout', 'A printer operation timed out.')), timeout);
         function fail(error: Error): void {
             if (failed) return;
             failed = true; clearTimeout(timer); child.kill('SIGKILL'); reject(error);
@@ -39,38 +39,28 @@ export function command(executable: string, args: readonly string[], input?: Buf
         child.stderr.on('data', () => {});
         child.stdout.on('data', (chunk: Buffer) => {
             bytes += chunk.length;
-            if (bytes > limit) fail(new PublicError('output_limit', 'The local operation exceeded its output limit.'));
+            if (bytes > limit) fail(new PublicError('output_limit', 'The printer operation exceeded its output limit.'));
             else chunks.push(chunk);
         });
         child.on('close', (code) => {
             clearTimeout(timer);
             if (failed) return;
-            if (code !== 0 && !allowFailureOutput) reject(new PublicError('native_failed', 'The local printer operation failed. Check the Mac printer queue or run xprinter-mcp doctor.'));
+            if (code !== 0 && !allowFailureOutput) reject(new PublicError('native_failed', 'The printer operation failed. Check the Mac queue, SSH connection or run xprinter-mcp doctor.'));
             else resolve(Buffer.concat(chunks));
         });
         child.stdin.end(input);
     });
 }
-function assertMac(): void {
-    if (process.platform !== 'darwin') throw new PublicError('unsupported_host', 'The USB printer backend currently requires macOS. Connect from Windows/Linux to the Mac via MCP over SSH or HTTPS.');
-}
-async function temporary<T>(run: (folder: string) => Promise<T>): Promise<T> {
-    const folder = await mkdtemp(join(tmpdir(), 'open-xprinter-mcp-'));
-    await chmod(folder, 0o700);
-    try { return await run(folder); }
-    finally { await rm(folder, { recursive: true, force: true }); }
-}
 export class NativeRenderer implements Renderer {
-    constructor(private readonly config: Config) {}
+    constructor(private readonly config: Config, private readonly run: CommandRunner = command) {}
     async render(request: Record<string, unknown>): Promise<Rendered> {
-        assertMac();
-        const info = join(dirname(dirname(this.config.renderer)), 'Info.plist');
+        const info = posix.join(posix.dirname(posix.dirname(this.config.renderer)), 'Info.plist');
         // Prevent an older app from treating an unknown flag as a request to open its GUI.
-        const version = (await command('/usr/bin/plutil', ['-extract', 'CFBundleShortVersionString', 'raw', '-o', '-', info])).toString().trim();
+        const version = (await this.run('/usr/bin/plutil', ['-extract', 'CFBundleShortVersionString', 'raw', '-o', '-', info])).toString().trim();
         if (!/^\d+\.\d+\.\d+$/.test(version) || version.localeCompare('0.3.0', undefined, { numeric: true }) < 0) {
             throw new PublicError('driver_upgrade', 'Install Open Xprinter 0.3.0 or newer before using MCP.');
         }
-        const output = JSON.parse((await command(this.config.renderer, ['--mcp-render'], Buffer.from(JSON.stringify(request)), 16 * 1024 * 1024, 30_000, true)).toString()) as unknown;
+        const output = JSON.parse((await this.run(this.config.renderer, ['--mcp-render'], Buffer.from(JSON.stringify(request)), 16 * 1024 * 1024, 30_000, true)).toString()) as unknown;
         const failure = z.object({ error: z.string().max(500) }).safeParse(output);
         if (failure.success) throw new PublicError('invalid_label', failure.data.error);
         const result = renderResponseSchema.parse(output);
@@ -101,14 +91,14 @@ export function verifyJobIdentity(attributes: Record<string, unknown>, job: Job)
 }
 
 export class CupsPrinter implements PrinterBackend {
+    constructor(private readonly run: CommandRunner = command, private readonly username: string = userInfo().username) {}
     async status(): Promise<PrinterStatus> {
-        assertMac();
         const unavailable: PrinterStatus = { queue: QUEUE, configured: false, enabled: false, acceptingJobs: false, state: 'unavailable', pendingJobs: 0, hardwareVerified: false };
         try {
             const [device, printer, acceptance, options, pending] = await Promise.all([
-                command('/usr/bin/lpstat', ['-v', QUEUE]), command('/usr/bin/lpstat', ['-p', QUEUE]),
-                command('/usr/bin/lpstat', ['-a', QUEUE]), command('/usr/bin/lpoptions', ['-p', QUEUE, '-l']),
-                command('/usr/bin/lpstat', ['-W', 'not-completed', '-o', QUEUE]),
+                this.run('/usr/bin/lpstat', ['-v', QUEUE]), this.run('/usr/bin/lpstat', ['-p', QUEUE]),
+                this.run('/usr/bin/lpstat', ['-a', QUEUE]), this.run('/usr/bin/lpoptions', ['-p', QUEUE, '-l']),
+                this.run('/usr/bin/lpstat', ['-W', 'not-completed', '-o', QUEUE]),
             ]);
             if (!/^device for XP330B_OpenSource: usb:\/\/Xprinter\/XP-330B(?:\?|\s|$)/i.test(device.toString()) || !options.toString().includes('Resolution/Resolution: *203dpi') || !options.toString().includes('40x58mmRotated.Fullbleed')) return unavailable;
             const text = printer.toString();
@@ -119,23 +109,16 @@ export class CupsPrinter implements PrinterBackend {
         } catch { return unavailable; }
     }
     async submit(pdf: Buffer, profile: Profile, copies: number, jobId: string, signal?: AbortSignal): Promise<number> {
-        assertMac();
-        return temporary(async folder => {
-            const file = join(folder, 'labels.pdf');
-            await writeFile(file, pdf, { mode: 0o600, flag: 'wx' });
-            if (signal?.aborted) throw new PublicError('request_cancelled', 'The request was cancelled before CUPS dispatch.');
-            const text = (await command('/usr/bin/lp', printArguments(profile, copies, jobId, file))).toString();
-            const match = /^request id is XP330B_OpenSource-(\d+)\b/.exec(text);
-            if (!match || !Number.isSafeInteger(Number(match[1]))) throw new PublicError('submission_uncertain', 'CUPS did not return a verifiable job receipt. Inspect the Mac queue before trying another key.');
-            return Number(match[1]);
-        });
+        if (signal?.aborted) throw new PublicError('request_cancelled', 'The request was cancelled before CUPS dispatch.');
+        // CUPS accepts '-' as stdin; the same bounded PDF stream works locally and over SSH.
+        const text = (await this.run('/usr/bin/lp', printArguments(profile, copies, jobId, '-'), pdf)).toString();
+        const match = /^request id is XP330B_OpenSource-(\d+)\b/.exec(text);
+        if (!match || !Number.isSafeInteger(Number(match[1]))) throw new PublicError('submission_uncertain', 'CUPS did not return a verifiable job receipt. Inspect the Mac queue before trying another key.');
+        return Number(match[1]);
     }
     private async verifiedJob(job: Job): Promise<{ state: number }> {
-        assertMac();
         if (job.cupsJobId === null) throw new PublicError('submission_uncertain', 'Submission is uncertain. Inspect the Mac queue; this server cannot cancel an unidentified job.');
-        return temporary(async folder => {
-            const file = join(folder, 'job.test');
-            await writeFile(file, `{
+        const test = Buffer.from(`{
  OPERATION Get-Job-Attributes
  GROUP operation-attributes-tag
  ATTR charset attributes-charset utf-8
@@ -144,12 +127,11 @@ export class CupsPrinter implements PrinterBackend {
  ATTR name requesting-user-name $owner
  ATTR keyword requested-attributes job-id,job-name,job-printer-uri,job-state
  STATUS successful-ok
-}\n`, { mode: 0o600, flag: 'wx' });
-            const xml = await command('/usr/bin/ipptool', ['-X', '-T', '5', '-d', `job-id=${job.cupsJobId}`, '-d', `owner=${userInfo().username}`, `ipp://localhost/printers/${QUEUE}`, file]);
-            const report = z.object({ Successful: z.literal(true), Tests: z.array(z.object({ ResponseAttributes: z.array(z.record(z.string(), z.unknown())) })) }).parse(JSON.parse((await command('/usr/bin/plutil', ['-convert', 'json', '-o', '-', '-'], xml)).toString()));
-            const attributes = Object.assign({}, ...report.Tests.flatMap(t => t.ResponseAttributes)) as Record<string, unknown>;
-            return verifyJobIdentity(attributes, job);
-        });
+}\n`);
+        const xml = await this.run('/usr/bin/ipptool', ['-X', '-T', '5', '-d', `job-id=${job.cupsJobId}`, '-d', `owner=${this.username}`, `ipp://127.0.0.1/printers/${QUEUE}`, '/dev/stdin'], test);
+        const report = z.object({ Successful: z.literal(true), Tests: z.array(z.object({ ResponseAttributes: z.array(z.record(z.string(), z.unknown())) })) }).parse(JSON.parse((await this.run('/usr/bin/plutil', ['-convert', 'json', '-o', '-', '-'], xml)).toString()));
+        const attributes = Object.assign({}, ...report.Tests.flatMap(t => t.ResponseAttributes)) as Record<string, unknown>;
+        return verifyJobIdentity(attributes, job);
     }
     async jobState(job: Job): Promise<string> {
         try { return ({ 3: 'pending', 4: 'held', 5: 'processing', 6: 'stopped', 7: 'cancelled', 8: 'aborted', 9: 'completed' } as Record<number, string>)[(await this.verifiedJob(job)).state]!; }
@@ -159,6 +141,6 @@ export class CupsPrinter implements PrinterBackend {
         const { state } = await this.verifiedJob(job);
         if (state >= 7) throw new PublicError('job_finished', 'This job already finished. Printed labels cannot be undone.');
         if (signal?.aborted) throw new PublicError('request_cancelled', 'The cancellation request was aborted before dispatch.');
-        await command('/usr/bin/cancel', [`${QUEUE}-${job.cupsJobId}`]);
+        await this.run('/usr/bin/cancel', [`${QUEUE}-${job.cupsJobId}`]);
     }
 }

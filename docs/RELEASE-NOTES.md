@@ -1,18 +1,17 @@
-Open Xprinter MCP 0.1.1 provides AI access to the XP-330B through local stdio, remote SSH and OAuth-authenticated HTTPS.
+# Open Xprinter MCP 0.2.0
 
-This patch rejects zero-height black marks before printing, matching the native app's stock validation. Gap/mark height must be 1–10 mm; continuous rolls may use zero.
+- Ready **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** image for Linux AMD64 and ARM64, usable through Docker Desktop on Windows/macOS and Docker Engine on Linux. Node 24, the compiled MCP server, locked dependencies and OpenSSH are included.
+- The MCP server runs in Docker and invokes the printer Mac's native app/CUPS over SSH. **The printer Mac needs only Open Xprinter 0.3.0+ and authorized SSH access; Node/MCP installation on that Mac is unnecessary for Docker mode.** Direct Linux/Windows USB hosting remains unimplemented.
+- Docker quick-start ZIP, Compose stdio and optional OAuth-required HTTP service, plus an AI client configuration. Instructions are available in **English, Russian and Simplified Chinese**.
+- Nonroot/read-only runtime, dropped capabilities, pinned base-image digest, strict SSH host keys, dedicated key-file authentication, no agent/PTY/forwarding or command replay. No proprietary driver binaries, credentials or test printer fixtures in the image.
+- Printing stays disabled by default. Enabling Docker printing requires persistent state; artifacts, budgets and durable retry receipts survive container recreation. State is bound to one backend host/account. Lost or uncertain submissions are never automatically printed again.
+- The same eight tools, owner isolation, OAuth scopes, previews and MCP 2026-07-28 plus 2025 compatibility remain available. Native macOS hosting still works independently of Docker.
+- Linux AMD64/ARM64 container tests exercise real SSH against an isolated synthetic printer, restart/retry/lost-response/cancellation guards and authenticated HTTP startup. Core CI also runs on Windows/Linux and Mac ARM/Intel; native renderer tests consume no paper. Images include SBOM and build provenance; release archives have SHA-256 checksums and an image digest.
 
-- Separate open-source MCP repository, with platform-neutral API and independently versioned macOS printer backend. Windows, Linux and Mac clients connect to the Mac hosting the USB printer. Direct USB hosting on Windows/Linux is not implemented.
-- Prepare Code 128, Unicode QR, text or PDF labels; inspect first-page previews; submit physical prints; inspect/cancel only the caller's own jobs.
-- Official TypeScript SDK v2 serving APIs: MCP 2026-07-28 plus 2025 client compatibility over stdio and Streamable HTTP.
-- Printing disabled by default; scoped authorization, per-job/shared hourly budgets, private expiring artifacts and durable idempotency receipts. An uncertain submission is never automatically replayed.
-- HTTPS resource-server mode requires operator-provided TLS/domain/OAuth JWT configuration; it binds only to loopback. No public endpoint or authentication provider is provisioned automatically.
-- English, Russian and Simplified Chinese tool descriptions and usage/contribution guides. Compiled runtime archive, dependency shrinkwrap, checksums and CI for Windows/Linux and ARM/Intel Macs.
+[Docker guide](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/docs/DOCKER.md) · [Image](https://github.com/ismoil-nosr/xprinter-mcp/pkgs/container/xprinter-mcp) · [Native driver](https://github.com/ismoil-nosr/xprinter-macos/releases/latest).
 
-Requires **Node 24+** and **[Open Xprinter 0.3.0+](https://github.com/ismoil-nosr/xprinter-macos/releases/latest)** on the server Mac. The native driver package is unsigned by Apple. [Install and connect](https://github.com/ismoil-nosr/xprinter-mcp#install-on-the-printer-mac).
+Русский: готовый Docker MCP для Intel/AMD и ARM, без установки Node на Mac с принтером. Контейнер работает с обычным Mac-драйвером через проверенное SSH-подключение. Квитанции сохраняются в постоянном томе; печать включается владельцем явно. [Инструкция](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/docs/DOCKER.ru.md).
 
-Русский: отдельный MCP-сервер для AI, локально и удалённо. Windows/Linux-клиенты используют тот же API; USB-бэкенд работает на Mac. Печать разрешается владельцем явно; повторы защищены квитанциями. [Инструкция](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/docs/README.ru.md).
+简体中文：现成 Docker MCP 镜像支持 AMD64 和 ARM64，通过 SSH 调用 Mac 原生驱动。打印机 Mac 无需安装 Node/MCP。默认禁止打印，持久卷保留重试回执及额度；欢迎中文使用者和贡献者。[中文指南](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/docs/DOCKER.zh-CN.md)。
 
-简体中文：独立 MCP 服务器支持本地和远程 AI 客户端。Windows/Linux 客户端使用相同 API，USB 后端运行在 Mac 上。默认禁止打印，并通过权限及持久回执限制误操作与重复请求。欢迎中文贡献。[中文指南](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/docs/README.zh-CN.md)。
-
-Tests consume no paper; a development-Mac held CUPS job was created, identity-verified and cancelled without requesting paper movement. Physical label alignment comes from the previously confirmed native driver baseline. Actual public OAuth login, network exposure and physical printer/stock variants need operator verification. [Validation](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/docs/VALIDATION.md) · [Security boundary](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/SECURITY.md).
+The production container also served real 58×40 mm Unicode PDF/PNG previews through SSH to the development Mac, with MCP printing disabled, and read an existing cancelled CUPS job. A separate explicit operator check submitted a synthetic PDF through SSH/stdin with `lp -H hold`, verified the held job and cancelled it without requesting paper movement. No extra physical label is claimed. The printer still needs the correctly configured native Mac driver and actual loaded stock. Docker Desktop cannot directly run the Mac USB driver. CUPS receipts are not physical-output proof; public TLS/OAuth deployment and actual remote access need operator configuration. [Validation](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/docs/VALIDATION.md) · [Security](https://github.com/ismoil-nosr/xprinter-mcp/blob/main/SECURITY.md).

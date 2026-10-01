@@ -1,0 +1,15 @@
+# Synthetic isolated test server; no host port is published.
+Port 2222
+HostKey /etc/ssh/ssh_host_ed25519_key
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+AllowUsers printer
+AuthorizedKeysFile /fixture/authorized_keys
+# The public fixture key is a read-only bind mount with the test runner's UID.
+StrictModes no
+AllowTcpForwarding no
+AllowAgentForwarding no
+X11Forwarding no
+PermitTTY no
+LogLevel ERROR

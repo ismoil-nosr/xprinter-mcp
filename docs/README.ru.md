@@ -2,7 +2,19 @@
 
 [English](../README.md) · **Русский** · [简体中文](README.zh-CN.md)
 
-MCP-сервер для AI: подготовка этикеток, превью, печать и проверка своих заданий на **Xprinter XP-330B**. Клиенты Windows, Linux и macOS используют одинаковый API. Принтер подключён по USB к Mac, на котором работает сервер. Прямое USB-подключение сервера к Windows/Linux в этой версии ещё не реализовано.
+MCP-сервер для AI: подготовка этикеток, превью, печать и проверка своих заданий на **Xprinter XP-330B**. Клиенты Windows, Linux и macOS используют одинаковый API. Сервер работает на Mac или **в готовом Docker-образе с SSH-подключением к Mac с принтером**. Прямое USB-подключение сервера к Windows/Linux в этой версии ещё не реализовано.
+
+## Быстрый запуск в Docker
+
+Образ **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** содержит Node и все MCP-зависимости; есть версии для Intel/AMD и ARM. На Mac с USB-принтером достаточно обычного Open Xprinter 0.3.0+ и SSH: устанавливать Node/MCP на этот Mac не нужно. Скачайте Docker ZIP из релиза, заполните `docker.env` с аккаунтом, отдельным SSH-ключом и проверенным ключом сервера:
+
+```sh
+docker compose --env-file docker.env pull xprinter
+docker compose --env-file docker.env run --rm -T xprinter doctor
+docker compose --env-file docker.env run --rm -T xprinter
+```
+
+Последняя команда запускает stdio MCP. [Пошаговая инструкция на русском](DOCKER.ru.md) и [JSON для AI-клиента](../examples/docker.json). Печать выключена по умолчанию; постоянный том сохраняет квитанции после пересоздания контейнера. Есть Compose-профиль HTTP с обязательным OAuth и публикацией только на локальный адрес Docker-компьютера.
 
 ## Установка на Mac с принтером
 
@@ -11,7 +23,7 @@ MCP-сервер для AI: подготовка этикеток, превью,
 3. Скачайте `.tgz` и `SHA256SUMS.txt` из [релиза MCP](https://github.com/ismoil-nosr/xprinter-mcp/releases/latest). Проверьте SHA-256 архива, затем:
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.1.1.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.2.0.tgz
 xprinter-mcp doctor
 ```
 
@@ -55,7 +67,7 @@ xprinter-mcp doctor
 
 Удалённому клиенту не нужен Mac-драйвер. Для приватного доступа используйте SSH с ключом, например [ssh.json](../examples/ssh.json). На клиенте нужен SSH, на серверном Mac — Node, драйвер и доступ к очереди. Все клиенты одного SSH/Mac-аккаунта разделяют его локальную идентичность.
 
-Для публичного HTTPS нужны домен, TLS-прокси и внешний OAuth-провайдер с JWT access tokens. Сам HTTP-сервер слушает только `127.0.0.1`; анонимного HTTP нет. [Подробная инструкция](REMOTE.md) и [требования OAuth](OAUTH.md). Провайдер выдаёт права `xprinter.read`, `xprinter.prepare`, `xprinter.print`, `xprinter.cancel`; издатель, аудитория, подпись и срок токена проверяются. Устанавливать драйвер на удалённый Windows/Linux не требуется.
+Для публичного HTTPS нужны домен, TLS-прокси и внешний OAuth-провайдер с JWT access tokens. Нативный сервер по умолчанию слушает `127.0.0.1`; Docker HTTP-профиль публикует порт только на локальный адрес хоста. Анонимного HTTP нет. [Подробная инструкция](REMOTE.md) и [требования OAuth](OAUTH.md). Провайдер выдаёт права `xprinter.read`, `xprinter.prepare`, `xprinter.print`, `xprinter.cancel`; издатель, аудитория, подпись и срок токена проверяются. Устанавливать драйвер на удалённый Windows/Linux не требуется.
 
 Поддерживаются MCP 2026-07-28 и совместимый режим клиентов 2025 года через официальный SDK v2. Старый отдельный транспорт HTTP+SSE не предоставляется. Интерфейс инструментов доступен на английском, русском и упрощённом китайском; имена инструментов и JSON-поля неизменны. Code 128 принимает ASCII, QR — Unicode.
 

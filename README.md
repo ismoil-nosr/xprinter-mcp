@@ -2,9 +2,21 @@
 
 [![Test and release](https://github.com/ismoil-nosr/xprinter-mcp/actions/workflows/test.yml/badge.svg)](https://github.com/ismoil-nosr/xprinter-mcp/actions/workflows/test.yml)
 
-Let AI clients prepare, preview and print labels on an **Xprinter XP-330B** using the Model Context Protocol. Local clients use **stdio**; remote clients use **SSH** or **OAuth-authenticated HTTPS**. Windows, Linux and macOS clients use the same API. The current USB printer backend runs on the Mac connected to the printer.
+Let AI clients prepare, preview and print labels on an **Xprinter XP-330B** using the Model Context Protocol. Local clients use **stdio**; remote clients use **SSH** or **OAuth-authenticated HTTPS**. Windows, Linux and macOS clients use the same API. Host MCP on the printer Mac, or **run the ready Docker image anywhere and connect to that Mac over SSH**. The USB driver/native renderer stay on the Mac.
 
-[Downloads](https://github.com/ismoil-nosr/xprinter-mcp/releases/latest) · [Русский](docs/README.ru.md) · [简体中文](docs/README.zh-CN.md) · [Remote access](docs/REMOTE.md) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
+[Downloads](https://github.com/ismoil-nosr/xprinter-mcp/releases/latest) · [Docker quick start](docs/DOCKER.md) · [Русский](docs/README.ru.md) · [简体中文](docs/README.zh-CN.md) · [Remote access](docs/REMOTE.md) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
+
+## Ready Docker image
+
+**`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** supports Intel/AMD and ARM. Download the release's Docker quick-start ZIP, set the Mac SSH account/key/verified host key in `docker.env`, then:
+
+```sh
+docker compose --env-file docker.env pull xprinter
+docker compose --env-file docker.env run --rm -T xprinter doctor
+docker compose --env-file docker.env run --rm -T xprinter
+```
+
+The last command starts MCP stdio; [the client JSON template](examples/docker.json) connects an AI app. Node and MCP dependencies are already in the image: **the printer Mac needs only Open Xprinter 0.3.0+ and SSH**, with its project queue configured. Printing starts disabled. The named state volume preserves retry receipts when containers are recreated; enabling printing without it is refused. An optional Compose HTTP profile retains mandatory OAuth and publishes only to host loopback. [English](docs/DOCKER.md) · [Русский](docs/DOCKER.ru.md) · [简体中文](docs/DOCKER.zh-CN.md).
 
 ## Install on the printer Mac
 
@@ -13,7 +25,7 @@ Let AI clients prepare, preview and print labels on an **Xprinter XP-330B** usin
 3. Download the `.tgz` and `SHA256SUMS.txt` from this repository's release, verify the archive with `shasum -a 256`, then install the local archive:
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.1.1.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.2.0.tgz
 xprinter-mcp doctor
 ```
 
@@ -88,9 +100,9 @@ Resources expose capabilities and `xprinter://labels/{artifactId}` PDFs for the 
 
 ## Remote clients and platform support
 
-Windows and Linux clients do **not** need a macOS driver or a different MCP API. They connect to the server Mac via SSH, or to its HTTPS MCP endpoint. The server Mac needs the native driver and renderer. Direct USB hosting on Windows/Linux is **not implemented** in this release; the backend interfaces are separate from the MCP core so such backends can be added with their own validation. See [architecture](docs/ARCHITECTURE.md).
+Windows and Linux clients do **not** need a macOS driver or a different MCP API. They connect to a native server Mac via SSH/HTTPS, or run the MCP server in Docker using the SSH printer backend. The printer Mac needs the native driver and renderer; only native MCP hosting also needs Node there. Direct USB hosting on Windows/Linux is **not implemented** in this release; the backend interfaces are separate from the MCP core so such backends can be added with their own validation. See [architecture](docs/ARCHITECTURE.md).
 
-Start with SSH using key authentication; it needs no public HTTP service or OAuth provider. Public HTTP mode binds only to `127.0.0.1` and requires an operator-configured HTTPS reverse proxy plus an OAuth provider issuing audience-bound JWT access tokens. There is no anonymous HTTP mode. [REMOTE.md](docs/REMOTE.md) covers setup and [OAuth configuration](docs/OAUTH.md) covers the provider contract.
+Start with SSH using key authentication; it needs no public HTTP service or OAuth provider. Native HTTP mode defaults to `127.0.0.1`; the Docker Compose HTTP profile listens inside the container and publishes only to host loopback. Both require an operator-configured HTTPS reverse proxy plus an OAuth provider issuing audience-bound JWT access tokens. There is no anonymous HTTP mode. [REMOTE.md](docs/REMOTE.md) covers setup and [OAuth configuration](docs/OAUTH.md) covers the provider contract.
 
 The official TypeScript SDK v2 serving APIs support **MCP 2026-07-28** plus the **2025 compatibility handshake** on the same stdio/Streamable HTTP endpoints. Legacy HTTP+SSE transport is not provided. [Official SDK migration guide](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/migration/support-2026-07-28.md).
 
@@ -104,11 +116,18 @@ The official TypeScript SDK v2 serving APIs support **MCP 2026-07-28** plus the 
 | `XPRINTER_MAX_LABELS_PER_HOUR` | `500` across identities/processes sharing the state directory; maximum 1000 |
 | `XPRINTER_STATE_DIR` | `~/Library/Application Support/Open Xprinter/MCP`; local private storage |
 | `XPRINTER_RENDERER` | Installed app executable; trusted operator override for development |
+| `XPRINTER_BACKEND` | `local`; `ssh` invokes Mac printer tools remotely; Docker defaults to `ssh` |
+| `XPRINTER_SSH_HOST`, `XPRINTER_SSH_USER` | Required for SSH backend; authorized normal Mac account |
+| `XPRINTER_SSH_PORT` | `22` |
+| `XPRINTER_SSH_KEY`, `XPRINTER_SSH_KNOWN_HOSTS` | Private key and verified host-key files; Docker mounts them read-only under `/run/secrets` |
+| `XPRINTER_LISTEN_HOST` | `127.0.0.1`; Docker HTTP Compose sets `0.0.0.0` internally, keeps host publication on loopback |
 | HTTP variables | See [REMOTE.md](docs/REMOTE.md) |
 
 MCP limits: width 20–76 mm, feed height 10–200 mm, 50 records/100 pages, PDF input 2 MiB/100 pages, rendered PDF 6 MiB, 40 million batch pixels, 2 concurrent renders. Prepared data expires after 15 minutes, with a 64 MiB/128-artifact shared storage quota. Receipts remain 30 days; even uncertain/cancelled jobs count conservatively toward the hourly paper budget. Retrying a receipt after 30 days is outside the deduplication window. State is local SQLite through Node's built-in API; Node 24 may emit an experimental SQLite warning on **stderr**, which does not affect MCP stdout.
 
 Keep the server Mac awake, its USB connection available and label stock unchanged while accepting remote jobs. Other native apps share the physical queue and are outside MCP authorization/budgets. The project currently addresses one configured XP-330B queue per Mac.
+
+Use one authoritative deployment/state volume per printer. Different native/Docker installations with different state paths have separate budgets. A state directory is bound to its backend target; preserving receipts across a container upgrade is required, and changing the target silently is refused.
 
 ## Test, package and uninstall
 

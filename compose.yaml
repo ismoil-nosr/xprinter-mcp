@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: MIT
+name: xprinter-mcp
+x-runtime: &runtime
+  image: ${XPRINTER_IMAGE:-ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0}
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  pids_limit: 64
+  mem_limit: 512m
+  cpus: 2
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=16m,mode=1777
+  volumes:
+    - type: volume
+      source: state
+      target: /var/lib/xprinter
+    - type: bind
+      source: ${XPRINTER_KEY_FILE:-./secrets/id_ed25519}
+      target: /run/secrets/id_ed25519
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${XPRINTER_KNOWN_HOSTS_FILE:-./secrets/known_hosts}
+      target: /run/secrets/known_hosts
+      read_only: true
+      bind:
+        create_host_path: false
+  environment: &environment
+    XPRINTER_BACKEND: ssh
+    XPRINTER_STATE_DIR: /var/lib/xprinter
+    XPRINTER_SSH_HOST: ${XPRINTER_SSH_HOST:-host.docker.internal}
+    XPRINTER_SSH_PORT: ${XPRINTER_SSH_PORT:-22}
+    XPRINTER_SSH_USER: ${XPRINTER_SSH_USER:-}
+    XPRINTER_ALLOW_PRINT: ${XPRINTER_ALLOW_PRINT:-0}
+    XPRINTER_LANGUAGE: ${XPRINTER_LANGUAGE:-en}
+    XPRINTER_MAX_LABELS_PER_JOB: ${XPRINTER_MAX_LABELS_PER_JOB:-100}
+    XPRINTER_MAX_LABELS_PER_HOUR: ${XPRINTER_MAX_LABELS_PER_HOUR:-500}
+services:
+  xprinter:
+    <<: *runtime
+    command: [stdio]
+    stdin_open: true
+  xprinter-http:
+    <<: *runtime
+    profiles: [http]
+    command: [http]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${XPRINTER_HTTP_PORT:-8787}:8787"
+    environment:
+      <<: *environment
+      XPRINTER_LISTEN_HOST: 0.0.0.0
+      XPRINTER_PORT: 8787
+      XPRINTER_PUBLIC_URL: ${XPRINTER_PUBLIC_URL:-}
+      XPRINTER_OAUTH_ISSUER: ${XPRINTER_OAUTH_ISSUER:-}
+      XPRINTER_OAUTH_JWKS_URL: ${XPRINTER_OAUTH_JWKS_URL:-}
+      XPRINTER_ALLOWED_ORIGINS: ${XPRINTER_ALLOWED_ORIGINS:-}
+    healthcheck:
+      test: [CMD, node, -e, "require('http').get('http://127.0.0.1:8787/.well-known/oauth-protected-resource/mcp',r=>{r.resume();process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+volumes:
+  state:
+    name: ${XPRINTER_STATE_VOLUME:-xprinter-mcp-state}

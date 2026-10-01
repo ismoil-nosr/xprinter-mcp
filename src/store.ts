@@ -37,10 +37,20 @@ export class Store {
             );
             CREATE INDEX IF NOT EXISTS artifact_expiry ON artifacts(expires);
             CREATE INDEX IF NOT EXISTS job_budget ON jobs(created);
+            CREATE TABLE IF NOT EXISTS backend_binding (id INTEGER PRIMARY KEY CHECK (id=1), fingerprint TEXT NOT NULL);
         `);
         this.cleanup();
     }
     close(): void { this.db.close(); }
+    bindBackend(identity: string): void {
+        const fingerprint = createHash('sha256').update(identity).digest('hex');
+        this.transaction(() => {
+            this.db.prepare('INSERT OR IGNORE INTO backend_binding VALUES (1,?)').run(fingerprint);
+            if (this.db.prepare('SELECT fingerprint FROM backend_binding WHERE id=1').get()!.fingerprint !== fingerprint) {
+                throw new PublicError('backend_changed', 'This state volume belongs to another printer host/account. Restore its original backend configuration; do not erase retry receipts.');
+            }
+        });
+    }
     private transaction<T>(run: () => T): T {
         this.db.exec('BEGIN IMMEDIATE');
         try { const result = run(); this.db.exec('COMMIT'); return result; }

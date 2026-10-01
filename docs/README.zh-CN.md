@@ -2,7 +2,19 @@
 
 [English](../README.md) · [Русский](README.ru.md) · **简体中文**
 
-让 AI 通过 MCP 为 **Xprinter 芯烨 XP-330B** 准备标签、查看预览、打印并查询自己的任务。Windows、Linux 和 macOS 客户端使用相同 API。当前 USB 后端运行在连接打印机的 Mac 上；本版本尚未实现 Windows/Linux 直接 USB 主机支持。
+让 AI 通过 MCP 为 **Xprinter 芯烨 XP-330B** 准备标签、查看预览、打印并查询自己的任务。Windows、Linux 和 macOS 客户端使用相同 API。MCP 可在 Mac 上运行，或**使用现成 Docker 镜像，通过 SSH 连接打印机 Mac**。USB 驱动和原生渲染器仍运行在 Mac 上；本版本尚未实现 Windows/Linux 直接 USB 主机支持。
+
+## Docker 快速开始
+
+镜像 **`ghcr.io/ismoil-nosr/xprinter-mcp:0.2.0`** 内含 Node 和全部 MCP 依赖，支持 Intel/AMD 及 ARM。打印机 Mac 只需要 Open Xprinter 0.3.0+ 与 SSH，**无需安装 Node/MCP**。下载发行版中的 Docker ZIP，填写 `docker.env` 的 Mac 账户、专用 SSH 密钥和已验证主机密钥：
+
+```sh
+docker compose --env-file docker.env pull xprinter
+docker compose --env-file docker.env run --rm -T xprinter doctor
+docker compose --env-file docker.env run --rm -T xprinter
+```
+
+最后一条命令启动 MCP stdio。[中文 Docker 指南](DOCKER.zh-CN.md)及 [AI 客户端 JSON](../examples/docker.json)。默认禁止打印；持久卷在重建容器后保留重试回执。可选 HTTP Compose 配置强制 OAuth，且仅发布到 Docker 主机回环地址。
 
 ## 在打印机所在的 Mac 上安装
 
@@ -11,7 +23,7 @@
 3. 从 [MCP Releases](https://github.com/ismoil-nosr/xprinter-mcp/releases/latest) 下载 `.tgz` 和 `SHA256SUMS.txt`，验证 SHA-256 后运行：
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.1.1.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.2.0.tgz
 xprinter-mcp doctor
 ```
 
@@ -55,7 +67,7 @@ xprinter-mcp doctor
 
 远程 AI 客户端不需要 macOS 驱动。推荐通过 SSH 密钥访问服务器 Mac，参见 [ssh.json](../examples/ssh.json)。客户端只需要 SSH；Node、驱动和队列位于服务器 Mac。同一 SSH/Mac 账户下的客户端共享本地身份。
 
-公开 HTTPS 需要域名、TLS 反向代理和外部 OAuth 提供商。HTTP 服务仅监听 `127.0.0.1`，没有匿名模式。[远程配置指南](REMOTE.md)及 [OAuth 要求](OAUTH.md)。访问令牌必须是签名的 JWT access token，包含正确的 issuer、audience、subject、时间和权限范围：`xprinter.read`、`xprinter.prepare`、`xprinter.print`、`xprinter.cancel`。令牌不会转交给打印系统。
+公开 HTTPS 需要域名、TLS 反向代理和外部 OAuth 提供商。原生服务默认监听 `127.0.0.1`；Docker HTTP 配置仅发布到主机回环地址，没有匿名模式。[远程配置指南](REMOTE.md)及 [OAuth 要求](OAUTH.md)。访问令牌必须是签名的 JWT access token，包含正确的 issuer、audience、subject、时间和权限范围：`xprinter.read`、`xprinter.prepare`、`xprinter.print`、`xprinter.cancel`。令牌不会转交给打印系统。
 
 通过官方 SDK v2 支持 MCP 2026-07-28 和 2025 客户端兼容模式；不提供旧的独立 HTTP+SSE 传输。工具名称和 JSON 字段保持稳定；标题和描述支持英文、俄文、简体中文。Code 128 只接受可打印 ASCII，二维码支持中文等 Unicode 内容。
 
