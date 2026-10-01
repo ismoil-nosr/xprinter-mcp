@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: ismoil-nosr/xprinter-macos
-          ref: cbb25d6442ca8674a0643eb7faeda743c0f0669e # Open Xprinter 0.3.1 renderer
+          ref: 7c7d5c0bf8c9ac3634bbad4aab5cbe9061aa7e18 # Open Xprinter 0.3.1 renderer
           path: native-driver
           persist-credentials: false
       - name: Build native companion without installing or printing

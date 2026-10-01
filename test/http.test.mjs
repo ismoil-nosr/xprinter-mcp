@@ -73,6 +73,38 @@ test('HTTP metadata, bearer challenges, Host/Origin guards, CORS and body limits
     const invalid = await fetch(url, { method: 'POST', headers: { Authorization: 'Bearer invalid-token' }, body: '{}' });
     assert.equal(invalid.status, 401);
 });
+test('public OAuth discovery cannot dispatch protected MCP tools', async t => {
+    const { url, service, printer } = await serving(t), base = new URL(url).origin;
+    let dispatched = 0;
+    for (const name of ['capabilities', 'prepareLabels', 'preparePdf', 'preview', 'print', 'cancel', 'jobStatus']) {
+        const original = service[name];
+        if (typeof original === 'function') service[name] = function (...args) { dispatched++; return original.apply(this, args); };
+    }
+    const originalStatus = printer.status;
+    printer.status = function (...args) { dispatched++; return originalStatus.apply(this, args); };
+    const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'printer_status', arguments: {} } });
+    for (const path of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp']) {
+        const metadata = await fetch(base + path);
+        assert.equal(metadata.status, 200);
+        const fields = await metadata.json();
+        assert.deepEqual(Object.keys(fields).sort(), ['authorization_servers', 'bearer_methods_supported', 'resource', 'resource_name', 'scopes_supported']);
+        assert.equal(fields.resource, config.resource);
+        assert.deepEqual(fields.authorization_servers, [config.issuer]);
+        const refused = await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        assert.equal(refused.status, 405);
+    }
+    for (const method of ['GET', 'POST', 'DELETE']) {
+        const protectedRequest = await fetch(url, { method, ...(method === 'POST' ? { body } : {}) });
+        assert.equal(protectedRequest.status, 401);
+    }
+    for (const path of ['/mcp?access_token=x', '/.well-known/oauth-protected-resource/mcp?path=/mcp',
+        '/.well-known/oauth-protected-resource/mcp/', '/.well-known/oauth-protected-resource%2Fmcp',
+        '/.well-known/oauth-protected-resource/mcp/..%2F..%2Fmcp']) {
+        assert.equal((await fetch(base + path, { method: 'POST', body })).status, 404);
+    }
+    assert.equal(dispatched, 0);
+    assert.equal(printer.submissions.length, 0);
+});
 for (const [era, options] of [['2025 compatibility', {}], ['2026-07-28', { versionNegotiation: { pin: '2026-07-28' } }]]) {
     test(`authenticated HTTP: ${era}, identity isolation and scope challenges`, async t => {
         const { url, printer } = await serving(t);

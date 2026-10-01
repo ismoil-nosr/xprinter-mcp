@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { lstatSync } from 'node:fs';
+import { lstatSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Store } from '../dist/store.js';
 import { prepareLabelsSchema, preparePdfSchema, printSchema } from '../dist/schema.js';
@@ -132,6 +132,16 @@ test('private database permissions on POSIX and bounded preview storage', async 
         assert.equal(lstatSync(join(dir, 'state.sqlite')).mode & 0o777, 0o600);
     }
     assert.throws(() => store.put('alice', profile, { pdf: Buffer.alloc(65 * 1024 * 1024), preview: Buffer.alloc(0), pages: 1 }), /storage is full/);
+});
+test('database creation refuses symlinks without modifying their targets', { skip: process.platform === 'win32' }, t => {
+    const { dir } = fixture(t);
+    const unsafe = join(dir, 'unsafe'), target = join(dir, 'unrelated-data');
+    mkdirSync(unsafe, { mode: 0o700 });
+    writeFileSync(target, 'keep this data', { mode: 0o640 });
+    symlinkSync(target, join(unsafe, 'state.sqlite'));
+    assert.throws(() => new Store(unsafe), /Unsafe state database path/);
+    assert.equal(readFileSync(target, 'utf8'), 'keep this data');
+    assert.equal(lstatSync(target).mode & 0o777, 0o640);
 });
 test('cancellation is scoped, durable and repeatable', async t => {
     const { service, printer } = fixture(t);

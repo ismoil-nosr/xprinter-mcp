@@ -14,10 +14,10 @@ export class Store {
         if (dir.isSymbolicLink() || !dir.isDirectory() || (process.getuid && dir.uid !== process.getuid())) throw new Error('State directory must be owned by this user and must not be a symlink.');
         chmodSync(directory, 0o700);
         const file = join(directory, 'state.sqlite');
-        if (!existsSync(file)) {
-            try { closeSync(openSync(file, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600)); }
-            catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
-        }
+        // Atomic creation: never check existence before opening, and never truncate
+        // a durable receipt database. Validate an existing path below before SQLite.
+        try { closeSync(openSync(file, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600)); }
+        catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
         for (const path of [file, `${file}-wal`, `${file}-shm`]) {
             if (!existsSync(path)) continue;
             const stat = lstatSync(path);

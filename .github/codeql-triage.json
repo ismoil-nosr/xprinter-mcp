@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "exceptions": [
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "src/http.ts",
+      "region": {
+        "startLine": 50,
+        "endLine": 50,
+        "startColumn": 13,
+        "endColumn": 68
+      },
+      "expires": "2026-12-30",
+      "reason": "Fixed GET-only public OAuth discovery returns configured resource/issuer/scopes and immediately returns. It cannot call the MCP handler: /mcp alone proceeds to JWT signature/issuer/audience/lifetime validation and tool scopes. Regression public OAuth discovery cannot dispatch protected MCP tools verifies both discovery URLs, POST refusal, unauthenticated GET/POST/DELETE and encoded/query variants without any service or printer dispatch.",
+      "files": {
+        "src/http.ts": "de41ed0f63c27bae34161cdde1c05fbc324eadd9440a12b8185926780c931251",
+        "src/auth.ts": "c4ccc4c99ed2e9bb99d136494aaece458424e6e8a4c3f9b4109263e936e51659",
+        "src/server.ts": "3e9f63e6cf66a43381ade0453e7f30b699b32f34e1e509a38a5cedbdb733f2bc",
+        "test/http.test.mjs": "5a2bda988be1aa41de32e7be2750bf57cab7831c73f72a28be438859c0df3d71"
+      }
+    },
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "src/http.ts",
+      "region": {
+        "startLine": 50,
+        "endLine": 50,
+        "startColumn": 72,
+        "endColumn": 123
+      },
+      "expires": "2026-12-30",
+      "reason": "Fixed GET-only public OAuth discovery returns configured resource/issuer/scopes and immediately returns. It cannot call the MCP handler: /mcp alone proceeds to JWT signature/issuer/audience/lifetime validation and tool scopes. Regression public OAuth discovery cannot dispatch protected MCP tools verifies both discovery URLs, POST refusal, unauthenticated GET/POST/DELETE and encoded/query variants without any service or printer dispatch.",
+      "files": {
+        "src/http.ts": "de41ed0f63c27bae34161cdde1c05fbc324eadd9440a12b8185926780c931251",
+        "src/auth.ts": "c4ccc4c99ed2e9bb99d136494aaece458424e6e8a4c3f9b4109263e936e51659",
+        "src/server.ts": "3e9f63e6cf66a43381ade0453e7f30b699b32f34e1e509a38a5cedbdb733f2bc",
+        "test/http.test.mjs": "5a2bda988be1aa41de32e7be2750bf57cab7831c73f72a28be438859c0df3d71"
+      }
+    }
+  ]
+}
