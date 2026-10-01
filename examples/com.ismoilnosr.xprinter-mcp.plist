@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.ismoilnosr.xprinter-mcp</string>
+  <key>ProgramArguments</key><array>
+    <string>/absolute/path/to/node</string>
+    <string>/absolute/path/to/xprinter-mcp/dist/cli.js</string>
+    <string>http</string>
+  </array>
+  <key>EnvironmentVariables</key><dict>
+    <key>XPRINTER_PUBLIC_URL</key><string>https://printer.example.com/mcp</string>
+    <key>XPRINTER_OAUTH_ISSUER</key><string>https://identity.example.com</string>
+    <key>XPRINTER_OAUTH_JWKS_URL</key><string>https://identity.example.com/jwks</string>
+    <key>XPRINTER_ALLOW_PRINT</key><string>0</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardErrorPath</key><string>/absolute/private/path/xprinter-mcp.stderr.log</string>
+</dict></plist>

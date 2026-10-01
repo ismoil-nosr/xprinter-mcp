@@ -1,0 +1,28 @@
+name: Bug report / Ошибка / 问题报告
+description: English, Russian and Chinese reports are welcome.
+body:
+  - type: markdown
+    attributes:
+      value: "Please omit tokens, passwords, private labels and USB serials. 不要提交令牌、密码、客户标签或 USB 序列号。Не публикуйте секреты и реальные заказы."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and expected result / Проблема / 问题及预期结果
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: MCP/client/Node/macOS/driver versions and transport
+      description: Also include client OS and whether stdio, SSH or HTTPS is used.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction / Воспроизведение / 复现步骤
+      description: Synthetic labels only; note stock dimensions and gap when relevant.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized doctor result / Диагностика / 脱敏诊断

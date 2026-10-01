@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "xprinter": {
+      "command": "/absolute/path/to/node",
+      "args": ["/absolute/path/to/xprinter-mcp/dist/cli.js", "stdio"],
+      "env": { "XPRINTER_ALLOW_PRINT": "0", "XPRINTER_LANGUAGE": "en" }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# Replace the hostname. Configure DNS, reachability and certificate issuance first.
+printer.example.com {
+    request_body {
+        max_size 3MiB
+    }
+    reverse_proxy 127.0.0.1:8787 {
+        header_up Host printer.example.com
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@ismoil-nosr/xprinter-mcp",
+  "version": "0.1.0",
+  "description": "Local and authenticated remote MCP access to Open Xprinter on macOS",
+  "type": "module",
+  "license": "MIT",
+  "author": "Ismoil Nosr",
+  "repository": { "type": "git", "url": "git+https://github.com/ismoil-nosr/xprinter-mcp.git" },
+  "homepage": "https://github.com/ismoil-nosr/xprinter-mcp",
+  "bin": { "xprinter-mcp": "dist/cli.js" },
+  "files": ["dist", "docs", "README.md", "LICENSE", "SECURITY.md", "CONTRIBUTING.md", "examples", "npm-shrinkwrap.json"],
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:package": "npm run build && node scripts/test-package.mjs",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.2.0",
+    "@modelcontextprotocol/node": "2.1.0",
+    "jose": "6.2.12",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.2.0",
+    "@types/node": "24.10.13",
+    "typescript": "7.0.2"
+  }
+}

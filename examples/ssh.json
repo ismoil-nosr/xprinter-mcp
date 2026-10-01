@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "xprinter": {
+      "command": "ssh",
+      "args": [
+        "-T", "-o", "BatchMode=yes", "printer-user@printer-mac.local",
+        "/usr/bin/env XPRINTER_ALLOW_PRINT=0 /absolute/path/to/node /absolute/path/to/xprinter-mcp/dist/cli.js stdio"
+      ]
+    }
+  }
+}
