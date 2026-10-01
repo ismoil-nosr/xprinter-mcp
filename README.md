@@ -13,7 +13,7 @@ Let AI clients prepare, preview and print labels on an **Xprinter XP-330B** usin
 3. Download the `.tgz` and `SHA256SUMS.txt` from this repository's release, verify the archive with `shasum -a 256`, then install the local archive:
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.1.0.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.1.1.tgz
 xprinter-mcp doctor
 ```
 

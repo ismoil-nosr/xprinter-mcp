@@ -12,6 +12,9 @@ import { fixture, principal, other, profile, prepare } from './helpers.mjs';
 test('strict input, geometry, Unicode and batch limits', () => {
     const valid = prepareLabelsSchema.parse({ labels: [{ kind: 'qr', code: '中文测试-123' }] });
     assert.equal(valid.profile.widthMm, 58);
+    for (const profile of [{ stock: 'continuous', gapMm: 0 }, { stock: 'black-mark', gapMm: 1 }]) {
+        assert.equal(prepareLabelsSchema.safeParse({ profile, labels: [{ kind: 'qr', code: 'x' }] }).success, true);
+    }
     for (const input of [
         { labels: [{ kind: 'code128', code: '中文' }] },
         { labels: [{ kind: 'qr', code: '中'.repeat(300) }] },
@@ -19,6 +22,7 @@ test('strict input, geometry, Unicode and batch limits', () => {
         { labels: [{ kind: 'qr', code: 'x', quantity: 60 }, { kind: 'qr', code: 'x', quantity: 60 }] },
         { profile: { widthMm: 80 }, labels: [{ kind: 'qr', code: 'x' }] },
         { profile: { stock: 'gap', gapMm: 0 }, labels: [{ kind: 'qr', code: 'x' }] },
+        { profile: { stock: 'black-mark', gapMm: 0 }, labels: [{ kind: 'qr', code: 'x' }] },
         { labels: [{ kind: 'qr', code: 'x' }], file: '/etc/passwd' },
     ]) assert.equal(prepareLabelsSchema.safeParse(input).success, false);
     assert.equal(preparePdfSchema.safeParse({ pdfBase64: 'file:///etc/passwd' }).success, false);

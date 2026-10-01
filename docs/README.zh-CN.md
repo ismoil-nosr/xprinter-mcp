@@ -11,7 +11,7 @@
 3. 从 [MCP Releases](https://github.com/ismoil-nosr/xprinter-mcp/releases/latest) 下载 `.tgz` 和 `SHA256SUMS.txt`，验证 SHA-256 后运行：
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.1.0.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.1.1.tgz
 xprinter-mcp doctor
 ```
 

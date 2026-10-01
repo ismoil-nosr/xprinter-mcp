@@ -11,7 +11,7 @@ MCP-сервер для AI: подготовка этикеток, превью,
 3. Скачайте `.tgz` и `SHA256SUMS.txt` из [релиза MCP](https://github.com/ismoil-nosr/xprinter-mcp/releases/latest). Проверьте SHA-256 архива, затем:
 
 ```sh
-npm install --global ./ismoil-nosr-xprinter-mcp-0.1.0.tgz
+npm install --global ./ismoil-nosr-xprinter-mcp-0.1.1.tgz
 xprinter-mcp doctor
 ```
 

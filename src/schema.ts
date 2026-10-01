@@ -5,9 +5,9 @@ export const profileSchema = z.object({
     widthMm: z.number().min(20).max(76).default(58),
     heightMm: z.number().min(10).max(200).default(40),
     stock: z.enum(['gap', 'black-mark', 'continuous']).default('gap'),
-    gapMm: z.number().int().min(0).max(10).default(2),
+    gapMm: z.number().int().min(0).max(10).default(2).describe('Measured gap or black-mark height in mm: 1–10 for labels; zero is permitted only for continuous rolls.'),
     darkness: z.number().int().min(0).max(15).default(7),
-}).strict().refine(p => p.stock !== 'gap' || p.gapMm > 0, 'Gap stock requires a gap greater than zero.');
+}).strict().refine(p => p.stock === 'continuous' || p.gapMm > 0, 'Gap and black-mark stock require a measured gap/mark height greater than zero.');
 export type Profile = z.infer<typeof profileSchema>;
 export const labelSchema = z.object({
     kind: z.enum(['code128', 'qr', 'text']),

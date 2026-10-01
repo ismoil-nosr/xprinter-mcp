@@ -1,4 +1,6 @@
-Open Xprinter MCP 0.1.0 provides AI access to the XP-330B through local stdio, remote SSH and OAuth-authenticated HTTPS.
+Open Xprinter MCP 0.1.1 provides AI access to the XP-330B through local stdio, remote SSH and OAuth-authenticated HTTPS.
+
+This patch rejects zero-height black marks before printing, matching the native app's stock validation. Gap/mark height must be 1–10 mm; continuous rolls may use zero.
 
 - Separate open-source MCP repository, with platform-neutral API and independently versioned macOS printer backend. Windows, Linux and Mac clients connect to the Mac hosting the USB printer. Direct USB hosting on Windows/Linux is not implemented.
 - Prepare Code 128, Unicode QR, text or PDF labels; inspect first-page previews; submit physical prints; inspect/cancel only the caller's own jobs.
