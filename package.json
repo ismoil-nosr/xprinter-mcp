@@ -18,7 +18,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@modelcontextprotocol/server": "2.2.0",
+    "@modelcontextprotocol/server": "2.3.0",
     "@modelcontextprotocol/node": "2.1.0",
     "jose": "6.2.12",
     "zod": "4.6.5"
